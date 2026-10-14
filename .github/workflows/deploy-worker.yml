@@ -18,6 +18,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WORKER_URL: "https://nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -85,3 +86,19 @@ jobs:
           else
             echo "R2_UPLOAD_SECRET GitHub secret is not set; skipping."
           fi
+
+      - name: Smoke test Worker and Turnstile gateway
+        run: |
+          set -e
+          health_code="$(curl -sS -o /tmp/health.json -w '%{http_code}' "$WORKER_URL/api/health")"
+          test "$health_code" = "200"
+          projects_code="$(curl -sS -o /tmp/projects.json -w '%{http_code}' "$WORKER_URL/api/projects")"
+          test "$projects_code" = "200"
+          turnstile_code="$(curl -sS -o /tmp/turnstile.json -w '%{http_code}'             -H 'Content-Type: application/json'             -d '{"name":"Smoke Test","email":"smoke@example.com","subject":"Smoke Test","message":"Smoke Test"}'             "$WORKER_URL/api/contact")"
+          if [ "$turnstile_code" != "400" ]; then
+            echo "Expected Turnstile gateway to reject missing token with HTTP 400; received $turnstile_code"
+            cat /tmp/turnstile.json
+            exit 1
+          fi
+          grep -q "security verification" /tmp/turnstile.json
+          echo "Worker health, Neon read, and Turnstile secret gateway checks passed."
