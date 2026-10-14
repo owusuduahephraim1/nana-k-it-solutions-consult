@@ -95,7 +95,7 @@ jobs:
           key="deployment-tests/immediate-delete-$(date +%s%N).txt"
           printf 'Immediate delete verification\n' > /tmp/immediate-delete.txt
 
-          npx wrangler r2 object put "nana-k-it-solutions-consult-assets/$key"             --file=/tmp/immediate-delete.txt             --content-type=text/plain
+          npx wrangler r2 object put "nana-k-it-solutions-consult-assets/$key" --file=/tmp/immediate-delete.txt --content-type=text/plain --remote
 
           file_url="$WORKER_URL/files/$key"
           first_code="$(curl -sS -o /tmp/r2-before-delete.txt -w '%{http_code}' "$file_url")"
