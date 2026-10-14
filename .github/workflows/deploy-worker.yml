@@ -89,6 +89,30 @@ jobs:
             echo "R2_UPLOAD_SECRET GitHub secret is not set; skipping."
           fi
 
+      - name: Verify immediate R2 deletion behavior
+        run: |
+          set -euo pipefail
+          key="deployment-tests/immediate-delete-$(date +%s%N).txt"
+          printf 'Immediate delete verification\n' > /tmp/immediate-delete.txt
+
+          npx wrangler r2 object put "nana-k-it-solutions-consult-assets/$key"             --file=/tmp/immediate-delete.txt             --content-type=text/plain
+
+          file_url="$WORKER_URL/files/$key"
+          first_code="$(curl -sS -o /tmp/r2-before-delete.txt -w '%{http_code}' "$file_url")"
+          test "$first_code" = "200"
+          grep -q "Immediate delete verification" /tmp/r2-before-delete.txt
+
+          cache_control="$(curl -sSI "$file_url" | tr -d '\r' | awk -F': ' 'tolower($1)=="cache-control"{print tolower($2)}' | tail -n1)"
+          echo "Public file Cache-Control: $cache_control"
+          echo "$cache_control" | grep -q "no-store"
+
+          npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/$key"
+
+          deleted_code="$(curl -sS -o /tmp/r2-after-delete.txt -w '%{http_code}'             "$file_url?verify=$(date +%s%N)")"
+          test "$deleted_code" = "404"
+
+          echo "Immediate R2 deletion verification passed: GET changed from 200 to 404 with no-store caching."
+
       - name: Validate Turnstile secret
         env:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
