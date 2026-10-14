@@ -1,0 +1,4 @@
+{
+  "countProjects": "SELECT count(*)::int AS count FROM projects",
+  "listClientTickets": "SELECT id,ticket_number,issue_type,description,priority,status,created_at,updated_at FROM tickets WHERE lower(email)=lower($1) ORDER BY created_at DESC"
+}
