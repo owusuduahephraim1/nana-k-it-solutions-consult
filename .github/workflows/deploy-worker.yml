@@ -121,7 +121,15 @@ jobs:
 
           npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/$key"
 
-          deleted_code="$(curl -sS -o /tmp/r2-deleted.txt -w '%{http_code}' "$url")"
+          deleted_code=""
+          for attempt in 1 2 3 4 5; do
+            deleted_code="$(curl -sS -o /tmp/r2-deleted.txt -w '%{http_code}' "$url?deleted_check=$(date +%s%N)")"
+            if [ "$deleted_code" = "404" ]; then
+              break
+            fi
+            echo "Waiting for deleted R2 object to disappear from the public read path (attempt $attempt, HTTP $deleted_code)..."
+            sleep 2
+          done
           test "$deleted_code" = "404"
 
           echo "R2 upload secret, protected upload route, object read, and cleanup checks passed."
