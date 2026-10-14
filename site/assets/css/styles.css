@@ -130,10 +130,15 @@ p { margin: 0 0 1rem; }
 .field input, .field select, .field textarea { width:100%; border:1px solid #cbd7e5; background:#fff; border-radius:10px; padding:.77rem .82rem; color:var(--ink); min-height:45px; }
 .field textarea { min-height:145px; resize:vertical; }
 .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--blue-2); box-shadow:0 0 0 3px rgba(20,120,242,.12); outline:0; }
-.form-status { display:none; margin-top:1rem; padding:.8rem; border-radius:10px; font-weight:700; }
-.form-status.show { display:block; }
+.form-status { display:none; margin-top:1rem; padding:.8rem; border-radius:10px; font-weight:700; opacity:0; transform:translateY(8px); }
+.form-status.show { display:block; animation:formStatusIn .3s ease both; }
+.form-status.show.hide-motion { opacity:0; transform:translateY(-8px); transition:opacity .35s ease, transform .35s ease; }
 .form-status.success { color:#0d684f; background:#e8f7f2; border:1px solid #bde7d9; }
 .form-status.error { color:#8f1d18; background:#fff0ef; border:1px solid #f4c4c0; }
+@keyframes formStatusIn {
+  from { opacity:0; transform:translateY(8px); }
+  to { opacity:1; transform:translateY(0); }
+}
 .honeypot { position:absolute !important; left:-9999px !important; opacity:0 !important; }
 .contact-list { list-style:none; padding:0; display:grid; gap:.9rem; }
 .contact-list li { display:flex; gap:.75rem; align-items:flex-start; }
