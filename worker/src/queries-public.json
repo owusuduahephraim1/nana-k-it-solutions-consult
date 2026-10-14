@@ -1,0 +1,6 @@
+{
+  "publicSettings": "SELECT key,value FROM site_settings WHERE is_public=true ORDER BY key",
+  "publicProjects": "SELECT id,title,slug,category,description,challenge,solution,technologies,result,image_url,created_at FROM projects WHERE is_published=true ORDER BY created_at DESC",
+  "publicTestimonials": "SELECT id,client_name,company,quote,rating,created_at FROM testimonials WHERE is_published=true ORDER BY created_at DESC",
+  "publicBlog": "SELECT id,title,slug,content,excerpt,category,image_url,published_at FROM blog_posts WHERE is_published=true AND (published_at IS NULL OR published_at<=now()) ORDER BY published_at DESC NULLS LAST,id DESC"
+}
