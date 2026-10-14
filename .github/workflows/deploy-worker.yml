@@ -102,11 +102,12 @@ jobs:
           test "$first_code" = "200"
           grep -q "Immediate delete verification" /tmp/r2-before-delete.txt
 
-          cache_control="$(curl -sSI "$file_url" | tr -d '\r' | awk -F': ' 'tolower($1)=="cache-control"{print tolower($2)}' | tail -n1)"
+          curl -sS -D /tmp/r2-headers.txt -o /dev/null "$file_url?headers=$(date +%s%N)"
+          cache_control="$(tr -d '\r' < /tmp/r2-headers.txt | awk -F': ' 'tolower($1)=="cache-control"{print tolower($2)}' | tail -n1)"
           echo "Public file Cache-Control: $cache_control"
           echo "$cache_control" | grep -q "no-store"
 
-          npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/$key"
+          npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/$key" --remote
 
           deleted_code="$(curl -sS -o /tmp/r2-after-delete.txt -w '%{http_code}'             "$file_url?verify=$(date +%s%N)")"
           test "$deleted_code" = "404"
