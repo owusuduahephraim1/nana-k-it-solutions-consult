@@ -14,7 +14,7 @@ function corsHeaders(request, env) {
   const selected = origin && allowed.includes(origin) ? origin : allowed[0];
   return {
     'Access-Control-Allow-Origin': selected || 'https://owusuduahephraim1.github.io',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Upload-Key',
     'Vary': 'Origin'
   };
@@ -126,7 +126,7 @@ async function uploadFile(request, env) {
     if (file.size > maxBytes) return json({error:`File exceeds the ${Math.round(maxBytes/1024/1024)} MB limit.`},413,request,env);
     const base = file.name.replace(/[^a-zA-Z0-9._-]/g,'-').replace(/-+/g,'-');
     const key = cleanKey(`${folder}/${Date.now()}-${crypto.randomUUID()}-${base}`);
-    await env.STORAGE.put(key, file.stream(), { httpMetadata: { contentType: file.type || 'application/octet-stream', cacheControl: 'public, max-age=86400' }, customMetadata: { originalName: file.name } });
+    await env.STORAGE.put(key, file.stream(), { httpMetadata: { contentType: file.type || 'application/octet-stream', cacheControl: 'no-store, max-age=0' }, customMetadata: { originalName: file.name } });
     const publicBase = String(env.R2_PUBLIC_BASE_URL || new URL(request.url).origin).replace(/\/$/,'');
     return json({message:'File uploaded.', key, url:`${publicBase}/files/${encodeURI(key)}`},201,request,env);
   } catch(e) { return errorResponse(e,request,env); }
@@ -139,10 +139,39 @@ async function serveFile(request, env, keyPart) {
     const headers = new Headers();
     object.writeHttpMetadata(headers);
     headers.set('ETag', object.httpEtag);
-    headers.set('Cache-Control', headers.get('Cache-Control') || 'public, max-age=86400');
+    headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    headers.set('CDN-Cache-Control', 'no-store');
+    headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
+    headers.set('Pragma', 'no-cache');
+    headers.set('Expires', '0');
     headers.set('X-Content-Type-Options','nosniff');
     return new Response(object.body,{headers});
-  } catch (_) { return text('Bad request',400); }
+  } catch (_) {
+    return text('Bad request',400,{
+      'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0',
+      'CDN-Cache-Control':'no-store',
+      'Cloudflare-CDN-Cache-Control':'no-store'
+    });
+  }
+}
+
+async function deleteFile(request, env, keyPart) {
+  if (!env.R2_UPLOAD_SECRET) return json({error:'R2 upload is not configured.'},503,request,env);
+  if (request.headers.get('X-Admin-Upload-Key') !== env.R2_UPLOAD_SECRET) return json({error:'Unauthorized.'},401,request,env);
+  try {
+    const key = cleanKey(keyPart);
+    const existing = await env.STORAGE.head(key);
+    if (!existing) {
+      return json({error:'File not found.'},404,request,env);
+    }
+    await env.STORAGE.delete(key);
+    return json({
+      message:'File deleted. It is no longer available from the public file endpoint.',
+      key
+    },200,request,env);
+  } catch (e) {
+    return errorResponse(e,request,env);
+  }
 }
 
 export default {
@@ -163,6 +192,7 @@ export default {
     if (request.method === 'GET' && url.pathname === '/api/testimonials') return listTestimonials(request,env);
     if (request.method === 'GET' && url.pathname === '/api/blog') return listBlog(request,env);
     if (request.method === 'POST' && url.pathname === '/api/files/upload') return uploadFile(request,env);
+    if (request.method === 'DELETE' && url.pathname.startsWith('/api/files/')) return deleteFile(request,env,url.pathname.slice('/api/files/'.length));
     if (request.method === 'GET' && url.pathname.startsWith('/files/')) return serveFile(request,env,url.pathname.slice('/files/'.length));
     return json({error:'Not found.'},404,request,env);
   }
