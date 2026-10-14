@@ -32,7 +32,7 @@ jobs:
           SHARE_URL: "https://firestorage.ai/en/f/iQb3zb_hBrr6"
           TARGET_NAME: "nana-k-it-solutions-consult-neon-import.zip"
         run: |
-          cat > /tmp/download.mjs <<'EOF'
+          cat > .bootstrap-download.mjs <<'EOF'
           import { chromium } from 'playwright';
           import fs from 'node:fs';
 
@@ -42,7 +42,7 @@ jobs:
           const targetName = process.env.TARGET_NAME;
 
           await page.goto(shareUrl, { waitUntil: 'domcontentloaded', timeout: 120000 });
-          await page.waitForTimeout(8000);
+          await page.waitForTimeout(10000);
 
           console.log('Page title:', await page.title());
           console.log('Body text:', (await page.locator('body').innerText()).slice(0, 8000));
@@ -62,7 +62,7 @@ jobs:
               const txt = (await a.innerText().catch(() => '')).trim();
               console.log('Anchor', i, txt, href);
             }
-            const downloadLink = page.locator('a[download], a[href*="download"], button:has-text("Download")').first();
+            const downloadLink = page.locator('a[download], a[href*="download"], button:has-text("Download"), button:has-text("ダウンロード")').first();
             if (await downloadLink.count()) clickable = downloadLink;
             else throw new Error('Could not locate the shared ZIP download control.');
           }
@@ -78,7 +78,7 @@ jobs:
 
           await browser.close();
           EOF
-          node /tmp/download.mjs
+          node .bootstrap-download.mjs
 
       - name: Import repository files
         run: |
@@ -87,7 +87,11 @@ jobs:
           unzip -q /tmp/package.zip -d /tmp/import
           SRC="/tmp/import/nana-k-it-solutions-consult-neon-version"
           test -f "$SRC/README.md"
-          rsync -a --delete             --exclude='.git/'             --exclude='.github/'             --exclude='.bootstrap-trigger'             "$SRC/" ./
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.bootstrap-trigger' \
+            "$SRC/" ./
 
       - name: Commit imported project
         run: |
