@@ -112,7 +112,14 @@
     if (cfg.turnstileSiteKey) {
       const token = form.querySelector('[name="cf-turnstile-response"]')?.value?.trim();
       if (!token) {
-        showStatus(form, 'Security verification is still loading. Please wait a moment and try again.', 'error');
+        const ready = form.dataset.turnstileReady === 'true';
+        showStatus(
+          form,
+          ready
+            ? 'Please complete the security verification before submitting.'
+            : 'Security verification could not finish loading. Refresh the page and try again.',
+          'error'
+        );
         return;
       }
     }
