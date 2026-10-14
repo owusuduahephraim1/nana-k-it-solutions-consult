@@ -89,6 +89,43 @@ jobs:
             echo "R2_UPLOAD_SECRET GitHub secret is not set; skipping."
           fi
 
+      - name: Provision and verify R2 upload secret
+        run: |
+          set -euo pipefail
+          r2_secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$r2_secret"
+          printf '%s' "$r2_secret" | npx wrangler secret put R2_UPLOAD_SECRET
+
+          printf 'Nana K R2 production smoke test\n' > /tmp/nanak-r2-smoke.txt
+
+          upload_json=""
+          for attempt in 1 2 3 4 5 6; do
+            upload_json="$(curl -sS               -H "X-Admin-Upload-Key: $r2_secret"               -F "file=@/tmp/nanak-r2-smoke.txt;type=text/plain"               -F "folder=deployment-tests"               "$WORKER_URL/api/files/upload")"
+            if echo "$upload_json" | jq -e '.key and .url' >/dev/null 2>&1; then
+              break
+            fi
+            echo "Waiting for R2 upload secret rollout (attempt $attempt)..."
+            sleep 3
+          done
+
+          key="$(echo "$upload_json" | jq -r '.key // empty')"
+          url="$(echo "$upload_json" | jq -r '.url // empty')"
+          test -n "$key"
+          test -n "$url"
+
+          curl -fsS "$url" -o /tmp/nanak-r2-smoke-downloaded.txt
+          cmp /tmp/nanak-r2-smoke.txt /tmp/nanak-r2-smoke-downloaded.txt
+
+          unauthorized_code="$(curl -sS -o /tmp/r2-unauthorized.json -w '%{http_code}'             -F "file=@/tmp/nanak-r2-smoke.txt;type=text/plain"             -F "folder=deployment-tests"             "$WORKER_URL/api/files/upload")"
+          test "$unauthorized_code" = "401"
+
+          npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/$key"
+
+          deleted_code="$(curl -sS -o /tmp/r2-deleted.txt -w '%{http_code}' "$url")"
+          test "$deleted_code" = "404"
+
+          echo "R2 upload secret, protected upload route, object read, and cleanup checks passed."
+
       - name: Validate Turnstile secret
         env:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
