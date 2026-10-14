@@ -76,9 +76,23 @@
   function showStatus(form, message, type='success') {
     const box = form.querySelector('.form-status');
     if (!box) return;
+
+    clearTimeout(box._hideTimer);
+    clearTimeout(box._cleanupTimer);
+
     box.textContent = message;
     box.className = `form-status show ${type}`;
     box.setAttribute('role', 'status');
+
+    if (type === 'success') {
+      box._hideTimer = setTimeout(() => {
+        box.classList.add('hide-motion');
+        box._cleanupTimer = setTimeout(() => {
+          box.className = 'form-status';
+          box.textContent = '';
+        }, 350);
+      }, 2000);
+    }
   }
 
   async function submitJsonForm(form) {
