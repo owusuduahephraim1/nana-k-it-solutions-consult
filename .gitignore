@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+node_modules/
+worker/.dev.vars
+worker/.env
+.env
+*.log

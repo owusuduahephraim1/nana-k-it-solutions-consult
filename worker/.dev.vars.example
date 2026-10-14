@@ -1,0 +1,3 @@
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require"
+TURNSTILE_SECRET_KEY="replace-with-cloudflare-turnstile-secret"
+R2_UPLOAD_SECRET="replace-with-long-random-upload-secret"

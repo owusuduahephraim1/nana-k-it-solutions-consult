@@ -1,0 +1,52 @@
+{
+  "snapshot_date": "2026-10-14",
+  "source": "Neon",
+  "project": {
+    "name": "nana-k-it-solutions",
+    "id": "hidden-water-92411074",
+    "region": "aws-us-east-1",
+    "postgres_major": 18
+  },
+  "branch": {
+    "name": "main",
+    "id": "br-withered-morning-auwxq7ba",
+    "default": true,
+    "primary": true,
+    "state_at_export": "archived"
+  },
+  "database": "neondb",
+  "extensions": {
+    "pgcrypto": "1.4",
+    "plpgsql": "1.0"
+  },
+  "row_counts": {
+    "blog_posts": 5,
+    "contacts": 0,
+    "newsletter_subscribers": 0,
+    "projects": 4,
+    "quotes": 0,
+    "testimonials": 3,
+    "tickets": 0
+  },
+  "tables": [
+    "blog_posts",
+    "contacts",
+    "newsletter_subscribers",
+    "projects",
+    "quotes",
+    "testimonials",
+    "tickets"
+  ],
+  "application_functions": [
+    "generate_ticket_number",
+    "show_db_tree"
+  ],
+  "views": [],
+  "triggers": [],
+  "sequences": [],
+  "notes": [
+    "No database credentials or Cloudflare secrets are included.",
+    "Empty operational tables are preserved as empty JSON/CSV files.",
+    "The branch was archived at snapshot time; schema/data were still readable through Neon."
+  ]
+}

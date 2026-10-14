@@ -1,0 +1,17 @@
+NANA K IT SOLUTIONS CONSULT — NEON VERSION DEPLOYMENT CHECKLIST
+
+[OK] Neon project created: nana-k-it-solutions-consult
+[OK] Project ID: bitter-glade-60284002
+[OK] Main branch: br-bitter-mud-b7qryafs
+[OK] Database restored and row counts verified
+[OK] GitHub Pages workflow included
+[OK] Frontend configured for https://owusuduahephraim1.github.io/nana-k-it-solutions-consult
+[OK] Worker source includes Turnstile + rate limiting + R2
+
+REMAINING CLOUD/GITHUB CONTROL-PLANE STEPS
+[ ] GitHub Settings -> Pages -> Source: GitHub Actions
+[ ] Cloudflare Turnstile widget: allow owusuduahephraim1.github.io
+[ ] Cloudflare Worker DATABASE_URL: set to the new Neon project connection string
+[ ] Cloudflare Worker ALLOWED_ORIGINS: include https://owusuduahephraim1.github.io
+[ ] Verify existing R2 STORAGE binding points to nanak-it-assets
+[ ] Test /api/health, portfolio reads, contact, quote, ticket, newsletter and R2 delivery

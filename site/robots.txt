@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://owusuduahephraim1.github.io/nana-k-it-solutions-consult/sitemap.xml
