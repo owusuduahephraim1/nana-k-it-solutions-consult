@@ -1,16 +1,16 @@
-name = "nanak-it-solutions-api"
+name = "nana-k-it-solutions-consult-api"
 main = "src/turnstile-gateway.js"
 compatibility_date = "2026-08-01"
 workers_dev = true
 
 [vars]
-ALLOWED_ORIGINS = "https://owusuduahephraim1.github.io,https://nana-k-it-solutions-consult.pages.dev,https://nanakitsolutions.com,https://www.nanakitsolutions.com"
-R2_PUBLIC_BASE_URL = "https://nanak-it-solutions-api.nana-k-it-solutions-consult.workers.dev"
+ALLOWED_ORIGINS = "https://owusuduahephraim1.github.io,https://nanakitsolutions.com,https://www.nanakitsolutions.com"
+R2_PUBLIC_BASE_URL = "https://nana-k-it-solutions-consult-api.nana-k-it-solutions-consult.workers.dev"
 MAX_UPLOAD_BYTES = "20971520"
 
 [[ratelimits]]
 name = "FORM_RATE_LIMITER"
-namespace_id = "842761001"
+namespace_id = "842762001"
 
   [ratelimits.simple]
   limit = 5
@@ -18,7 +18,7 @@ namespace_id = "842761001"
 
 [[ratelimits]]
 name = "FORM_GLOBAL_RATE_LIMITER"
-namespace_id = "842761002"
+namespace_id = "842762002"
 
   [ratelimits.simple]
   limit = 60
@@ -26,5 +26,5 @@ namespace_id = "842761002"
 
 [[r2_buckets]]
 binding = "STORAGE"
-bucket_name = "nanak-it-assets"
-preview_bucket_name = "nanak-it-assets-dev"
+bucket_name = "nana-k-it-solutions-consult-assets"
+preview_bucket_name = "nana-k-it-solutions-consult-assets-dev"
