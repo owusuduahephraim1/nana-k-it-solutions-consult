@@ -5,7 +5,7 @@ workers_dev = true
 
 [vars]
 ALLOWED_ORIGINS = "https://owusuduahephraim1.github.io,https://nanakitsolutions.com,https://www.nanakitsolutions.com"
-R2_PUBLIC_BASE_URL = "https://nana-k-it-solutions-consult-api.nana-k-it-solutions-consult.workers.dev"
+R2_PUBLIC_BASE_URL = "https://nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev"
 MAX_UPLOAD_BYTES = "20971520"
 
 [[ratelimits]]
