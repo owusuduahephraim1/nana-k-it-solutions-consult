@@ -1,5 +1,5 @@
 window.NANAK_CONFIG = {
-  apiBaseUrl: "https://nanak-it-solutions-api.nana-k-it-solutions-consult.workers.dev",
+  apiBaseUrl: "https://nana-k-it-solutions-consult-api.nana-k-it-solutions-consult.workers.dev",
   siteUrl: "https://owusuduahephraim1.github.io/nana-k-it-solutions-consult",
   businessName: "Nana K IT Solutions Consult",
   email: "nduah385@gmail.com",
