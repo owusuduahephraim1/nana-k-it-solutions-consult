@@ -19,6 +19,8 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       WORKER_URL: "https://nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev"
+      TURNSTILE_SITE_KEY: "0x4AAAAAAEfXy_Nufj95C5IM"
+      TURNSTILE_HOSTNAME: "owusuduahephraim1.github.io"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -87,6 +89,59 @@ jobs:
             echo "R2_UPLOAD_SECRET GitHub secret is not set; skipping."
           fi
 
+      - name: Validate Turnstile secret
+        env:
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: |
+          set -e
+          test -n "$TURNSTILE_SECRET_KEY"
+          curl -sS https://challenges.cloudflare.com/turnstile/v0/siteverify             -X POST             --data-urlencode "secret=$TURNSTILE_SECRET_KEY"             --data-urlencode "response=invalid-test-token" > /tmp/siteverify.json
+          if jq -e '.["error-codes"] // [] | index("invalid-input-secret") or index("missing-input-secret")' /tmp/siteverify.json >/dev/null; then
+            echo "Turnstile secret is invalid."
+            exit 1
+          fi
+          echo "Turnstile secret accepted by Siteverify."
+
+      - name: Ensure GitHub Pages hostname on Turnstile widget
+        run: |
+          set -e
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/challenges/widgets/$TURNSTILE_SITE_KEY"
+          http_code="$(curl -sS -o /tmp/widget.json -w '%{http_code}' "$api"             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")"
+
+          if [ "$http_code" != "200" ] || ! jq -e '.success == true' /tmp/widget.json >/dev/null; then
+            echo "Cloudflare API token cannot read the Turnstile widget; hostname management was not changed."
+            exit 0
+          fi
+
+          if jq -e --arg host "$TURNSTILE_HOSTNAME" '.result.domains | index($host)' /tmp/widget.json >/dev/null; then
+            echo "Turnstile hostname already configured: $TURNSTILE_HOSTNAME"
+            exit 0
+          fi
+
+          jq --arg host "$TURNSTILE_HOSTNAME" '
+            .result
+            | {
+                name,
+                mode,
+                domains: ((.domains + [$host]) | unique),
+                bot_fight_mode,
+                clearance_level,
+                ephemeral_id,
+                offlabel
+              }
+            | with_entries(select(.value != null))
+          ' /tmp/widget.json > /tmp/widget-update.json
+
+          update_code="$(curl -sS -o /tmp/widget-updated.json -w '%{http_code}' "$api"             -X PUT             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -H "Content-Type: application/json"             --data-binary @/tmp/widget-update.json)"
+
+          if [ "$update_code" != "200" ] || ! jq -e '.success == true' /tmp/widget-updated.json >/dev/null; then
+            echo "Cloudflare API token can read but cannot update the Turnstile widget."
+            exit 0
+          fi
+
+          jq -e --arg host "$TURNSTILE_HOSTNAME" '.result.domains | index($host)' /tmp/widget-updated.json >/dev/null
+          echo "Turnstile hostname configured: $TURNSTILE_HOSTNAME"
+
       - name: Smoke test Worker and Turnstile gateway
         run: |
           set -e
@@ -101,4 +156,4 @@ jobs:
             exit 1
           fi
           grep -q "security verification" /tmp/turnstile.json
-          echo "Worker health, Neon read, and Turnstile secret gateway checks passed."
+          echo "Worker health, Neon read, and Turnstile gateway checks passed."
