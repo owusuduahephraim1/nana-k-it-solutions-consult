@@ -73,7 +73,16 @@
           'error-callback'(code) {
             tokenInput.value = '';
             setReady(form, false);
-            console.error('Turnstile widget error.', code);
+            const errorCode = String(code || 'unknown');
+            form.dataset.turnstileError = errorCode;
+            const status = form.querySelector('.form-status');
+            if (status) {
+              status.textContent = `Security verification connection failed (Cloudflare code ${errorCode}). Please refresh the page. If it continues, try an Incognito window with browser extensions disabled.`;
+              status.className = 'form-status show error';
+              status.setAttribute('role', 'status');
+            }
+            console.error('Turnstile widget error.', errorCode);
+            return true;
           }
         });
 
