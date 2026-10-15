@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "site/**"
+      - "scripts/validate-site.mjs"
   workflow_dispatch:
 
 permissions:
@@ -26,6 +27,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Validate production site
+        run: node scripts/validate-site.mjs
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
