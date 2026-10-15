@@ -1,0 +1,98 @@
+name: Final public readiness polish
+
+on:
+  push:
+    branches:
+      - production-readiness-2026-10-14
+    paths:
+      - ".public-readiness-polish-trigger"
+
+permissions:
+  contents: write
+
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Remove remaining launch placeholders
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p=Path(path)
+              s=p.read_text()
+              if old not in s:
+                  raise SystemExit(f"Pattern not found in {path}: {old[:90]}")
+              p.write_text(s.replace(old,new))
+
+          replace(
+            "site/about.html",
+            '<div class="profile-placeholder"><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=80" alt="Professional profile placeholder; replace with real profile photo" referrerpolicy="no-referrer"></div>',
+            '<div class="card"><img src="assets/images/logo.png" alt="Nana K IT Solutions Consult" style="width:110px;height:auto;margin-bottom:1rem"><span class="eyebrow">Practical IT consulting</span><h3>Support built around your operations</h3><p class="muted">From day-to-day troubleshooting to networking, information systems, security basics, and system administration, solutions are scoped to the organization\'s real requirements.</p><a class="btn btn-primary" href="contact.html">Discuss Your IT Need</a></div>'
+          )
+
+          replace(
+            "site/contact.html",
+            '<section class="section-sm bg-soft"><div class="container"><div class="map-placeholder"><div><i class="fa-solid fa-map-location-dot" style="font-size:2rem;color:#0b5ed7"></i><h2 style="font-size:1.4rem;margin-top:.7rem">Google Maps Embed Placeholder</h2><p>Replace this block with the official Google Maps iframe after confirming the public business location.</p></div></div></div></section></main>',
+            '<section class="section-sm bg-soft"><div class="container"><div class="card"><span class="eyebrow">Service locations</span><h2 style="font-size:1.7rem">Local and remote IT support</h2><p><strong>Santeo:</strong> near Cedar Estate.</p><p><strong>Koforidua Asokore:</strong> near Methodist JHS Junction Barrier, Eastern Region, Ghana.</p><p class="muted">Remote support is available for suitable software, account, configuration, and troubleshooting work after a support session has been confirmed.</p></div></div></section></main>'
+          )
+
+          old_area='The service area is currently shown as a placeholder. Update the Contact page and site configuration with the specific cities, regions, remote-support coverage, and travel terms before launch.'
+          new_area='Nana K IT Solutions Consult serves clients from Santeo near Cedar Estate and Koforidua Asokore near Methodist JHS Junction Barrier, Eastern Region, Ghana. Remote support is also available when the work can be completed securely online.'
+          replace("site/faq.html", old_area, new_area)
+
+          replace(
+            "site/portfolio.html",
+            'A sample project gallery showing the types of technical challenges and solutions Nana K IT Solutions Consult can support.',
+            'Verified project case studies and approved portfolio work are published here as they become available.'
+          )
+          replace(
+            "site/portfolio.html",
+            '<p class="muted" style="margin-top:1.4rem">The projects in this starter build are sample case material. Replace them with verified client work and approved images before public launch.</p>',
+            '<p class="muted" style="margin-top:1.4rem">Only verified, approved work is published. Contact Nana K IT Solutions Consult to discuss relevant experience for your IT requirement.</p>'
+          )
+
+          p=Path("site/assets/js/main.js")
+          s=p.read_text()
+          old="    const data = await fetchApi('/api/projects', []);\n    grid.innerHTML = data.map(projectCard).join('');"
+          new="    const data = await fetchApi('/api/projects', []);\n    grid.innerHTML = data.length ? data.map(projectCard).join('') : '<div class=\"empty-state\">Verified project case studies are being prepared for publication. Contact us to discuss relevant experience for your IT requirement.</div>';"
+          if old not in s:
+              raise SystemExit("Portfolio renderer pattern not found")
+          s=s.replace(old,new,1)
+          s=s.replace(" : 'Sample article'", " : 'Published article'")
+          p.write_text(s)
+
+          for path, form_id, divider_class in [
+              ("site/admin.html","admin-login-form","workspace-divider"),
+              ("site/client-portal.html","client-login-form","workspace-divider")
+          ]:
+              p=Path(path); s=p.read_text()
+              s=s.replace(f'<div class="{divider_class}"><span>or</span></div>', f'<div class="{divider_class}" hidden><span>or</span></div>',1)
+              s=s.replace(f'<form id="{form_id}">', f'<form id="{form_id}" hidden>',1)
+              p.write_text(s)
+
+          p=Path("site/client-portal.html")
+          s=p.read_text().replace('<details class="workspace-signup">','<details class="workspace-signup" hidden>')
+          s=s.replace('Google sign-in is recommended because the portal only releases client records to a verified email address.','The portal releases client records only to a verified identity whose email matches the original service request.')
+          p.write_text(s)
+          PY
+
+      - name: Validate polished pages
+        run: |
+          node --check site/assets/js/main.js
+          ! grep -R "Google Maps Embed Placeholder\|Professional profile placeholder\|service area is currently shown as a placeholder\|starter build are sample case material" -n site
+          grep -q "Verified project case studies are being prepared" site/assets/js/main.js
+          grep -q "Service locations" site/contact.html
+
+      - name: Commit public readiness polish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site
+          git commit -m "Remove remaining public launch placeholders"
+          git push
