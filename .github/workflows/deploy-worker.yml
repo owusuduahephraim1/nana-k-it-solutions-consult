@@ -149,6 +149,14 @@ jobs:
           test "$health_code" = "200"
           projects_code="$(curl -sS -o /tmp/projects.json -w '%{http_code}' "$WORKER_URL/api/projects")"
           test "$projects_code" = "200"
+          settings_code="$(curl -sS -o /tmp/settings.json -w '%{http_code}' "$WORKER_URL/api/settings/public")"
+          test "$settings_code" = "200"
+          admin_code="$(curl -sS -o /tmp/admin.json -w '%{http_code}' "$WORKER_URL/api/admin/overview")"
+          test "$admin_code" = "401"
+          client_code="$(curl -sS -o /tmp/client.json -w '%{http_code}' "$WORKER_URL/api/client/me")"
+          test "$client_code" = "401"
+          curl -fsS "https://ep-square-mountain-b56mr71c.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth/.well-known/jwks.json" -o /tmp/jwks.json
+          jq -e '.keys | length > 0' /tmp/jwks.json >/dev/null
           turnstile_code="$(curl -sS -o /tmp/turnstile.json -w '%{http_code}'             -H 'Content-Type: application/json'             -d '{"name":"Smoke Test","email":"smoke@example.com","subject":"Smoke Test","message":"Smoke Test"}'             "$WORKER_URL/api/contact")"
           if [ "$turnstile_code" != "400" ]; then
             echo "Expected Turnstile gateway to reject missing token with HTTP 400; received $turnstile_code"
@@ -156,4 +164,4 @@ jobs:
             exit 1
           fi
           grep -q "security verification" /tmp/turnstile.json
-          echo "Worker health, Neon read, and Turnstile gateway checks passed."
+          echo "Worker health, Neon read, public settings, protected admin/client routes, Neon Auth JWKS, and Turnstile gateway checks passed."
