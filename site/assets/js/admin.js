@@ -48,7 +48,7 @@ async function loadView(view) {
   const labels = {
     overview:'Overview',contacts:'Contact Messages',quotes:'Consultation Requests',tickets:'Support Tickets',
     subscribers:'Newsletter Subscribers',projects:'Portfolio Management',testimonials:'Testimonials',
-    blog:'Blog & Insights',files:'Files & Remote Support',audit:'Audit Log'
+    blog:'Blog & Insights',files:'Files & Remote Support',notifications:'Notifications',audit:'Audit Log'
   };
   title.textContent = labels[view] || 'Admin Workspace';
   setBusy();
@@ -64,6 +64,7 @@ async function loadView(view) {
     else if (view === 'testimonials') renderTestimonials(cache[view]);
     else if (view === 'blog') renderBlog(cache[view]);
     else if (view === 'files') renderFiles(cache[view]);
+    else if (view === 'notifications') renderNotifications(cache[view]);
     else if (view === 'audit') renderAudit(cache[view]);
   } catch (error) {
     content.innerHTML = `<div class="notice"><strong>Unable to load this section.</strong><br>${escapeHtml(error.message)}</div>`;
@@ -155,6 +156,9 @@ function renderBlog(rows, edit=null) {
 function renderFiles(rows) {
   content.innerHTML = `<div class="workspace-panel"><h2>Upload a managed file</h2><p class="muted">Choose <strong>Remote support</strong> to automatically make the newest installer the public download on the Remote Support page.</p><form id="file-upload-form"><div class="form-grid two"><div class="field"><label>Purpose</label><select name="purpose"><option value="remote_support">Remote support</option><option value="portfolio">Portfolio asset</option><option value="documents">Document</option><option value="general">General</option></select></div><div class="field"><label>File (max 20 MB)</label><input name="file" type="file" required></div></div><button class="btn btn-primary" type="submit" style="margin-top:1rem"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button></form></div>
   <div class="workspace-panel" style="margin-top:1rem">${tableWrap(['Uploaded','Name','Purpose','Size','Link','Action'],rows.map(r=>`<tr><td>${formatDate(r.created_at)}</td><td>${escapeHtml(r.original_name)}</td><td>${escapeHtml(r.purpose)}</td><td>${Math.round(Number(r.size_bytes||0)/1024)} KB</td><td><a href="${escapeHtml(r.public_url||'#')}" target="_blank" rel="noopener">Open</a></td><td><button class="btn btn-danger" data-delete-file="${r.id}">Delete</button></td></tr>`).join('')||'<tr><td colspan="6">No managed files.</td></tr>')}</div>`;
+}
+function renderNotifications(rows) {
+  content.innerHTML = `<div class="workspace-panel"><div class="workspace-panel-head"><h2>Notifications</h2><span class="muted">${rows.filter(r=>!r.is_read).length} unread</span></div><div class="workspace-list">${rows.map(n=>`<article class="workspace-list-item ${n.is_read?'':'is-unread'}"><div><strong>${escapeHtml(n.title)}</strong><p>${escapeHtml(n.body)}</p><small>${formatDate(n.created_at)}</small></div><div class="workspace-row-actions">${n.is_read?'':`<button class="btn btn-secondary" data-read-notification="${n.id}">Mark read</button>`}</div></article>`).join('') || '<div class="empty-state">No notifications yet.</div>'}</div></div>`;
 }
 function renderAudit(rows) {
   content.innerHTML = tableWrap(['Date','Actor','Action','Entity','Details'],
