@@ -72,7 +72,8 @@ async function identify(request,env,{admin=false}={}){
   try{
     const base=String(env.NEON_AUTH_BASE_URL||'').trim();
     if(!base) throw new Error('NEON_AUTH_BASE_URL missing.');
-    const {payload}=await jwtVerify(match[1],jwks(env),{issuer:base,audience:base});
+    const issuer=new URL(base).origin;
+    const {payload}=await jwtVerify(match[1],jwks(env),{issuer,audience:issuer});
     const sub=String(payload.sub||'');
     if(!sub) throw new Error('Missing token subject.');
     const sql=db(env);
