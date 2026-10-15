@@ -72,7 +72,7 @@ async function identify(request,env,{admin=false}={}){
   try{
     const base=String(env.NEON_AUTH_BASE_URL||'').trim();
     if(!base) throw new Error('NEON_AUTH_BASE_URL missing.');
-    const {payload}=await jwtVerify(match[1],jwks(env),{issuer:new URL(base).origin});
+    const {payload}=await jwtVerify(match[1],jwks(env),{issuer:base,audience:base});
     const sub=String(payload.sub||'');
     if(!sub) throw new Error('Missing token subject.');
     const sql=db(env);
@@ -86,7 +86,7 @@ async function identify(request,env,{admin=false}={}){
     if(!user.email_verified){
       return {response:json({error:'A verified account is required. Use Google sign-in or verify your email first.'},403,request,env)};
     }
-    if(admin&&!adminEmails(env).has(user.email)){
+    if(admin&&(!adminEmails(env).has(user.email)||String(user.role||'').toLowerCase()!=='admin')){
       return {response:json({error:'Administrator access is not authorized for this account.'},403,request,env)};
     }
     return {user,payload};
