@@ -1,7 +1,9 @@
 import { createAuthClient } from 'https://esm.sh/@neondatabase/auth?bundle';
 
 const cfg = window.NANAK_CONFIG || {};
-export const authClient = createAuthClient(cfg.neonAuthUrl);
+export const authClient = createAuthClient(cfg.neonAuthUrl, {
+  fetchOptions: { credentials: 'include' }
+});
 
 export async function getSession() {
   const result = await authClient.getSession();
