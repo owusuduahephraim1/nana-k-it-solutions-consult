@@ -112,9 +112,9 @@ jobs:
             exit 1
           fi
 
-          FILE_ID="$(jq -r '.record.id // empty' /tmp/admin-file-upload.json)"
-          FILE_KEY="$(jq -r '.key // empty' /tmp/admin-file-upload.json)"
-          FILE_URL="$(jq -r '.url // empty' /tmp/admin-file-upload.json)"
+          FILE_ID="$(jq -r '.data.id // empty' /tmp/admin-file-upload.json)"
+          FILE_KEY="$(jq -r '.data.storage_key // empty' /tmp/admin-file-upload.json)"
+          FILE_URL="$(jq -r '.data.public_url // empty' /tmp/admin-file-upload.json)"
           test -n "$FILE_ID"
           test -n "$FILE_KEY"
           test -n "$FILE_URL"
@@ -149,3 +149,4 @@ jobs:
           if [ -n "${TEST_R2_KEY:-}" ]; then
             npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/$TEST_R2_KEY" --remote >/dev/null 2>&1 || true
           fi
+          npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/general/1792026460128-2248b72d-9d28-4037-96e3-37fbaf176f8e-admin-integration-test-1792026457734263997.txt" --remote >/dev/null 2>&1 || true
