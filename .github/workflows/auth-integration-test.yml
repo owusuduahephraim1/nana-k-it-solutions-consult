@@ -36,7 +36,7 @@ jobs:
           PASSWORD="NkT-$(openssl rand -hex 16)-Aa1!"
           echo "::add-mask::$PASSWORD"
 
-          status="$(curl -sS -c /tmp/nanak-auth-cookies.txt -o /tmp/signup.json -w '%{http_code}'             -H 'Content-Type: application/json'             --data-binary "$(jq -nc --arg name 'Portal Integration Test' --arg email "$EMAIL" --arg password "$PASSWORD" '{name:$name,email:$email,password:$password}')"             "$AUTH_URL/sign-up/email")"
+          status="$(curl -sS -c /tmp/nanak-auth-cookies.txt -o /tmp/signup.json -w '%{http_code}'             -H 'Content-Type: application/json'             -H "Origin: $SITE_ORIGIN"             --data-binary "$(jq -nc --arg name 'Portal Integration Test' --arg email "$EMAIL" --arg password "$PASSWORD" '{name:$name,email:$email,password:$password}')"             "$AUTH_URL/sign-up/email")"
 
           if [ "$status" != "200" ] && [ "$status" != "201" ]; then
             cat /tmp/signup.json
