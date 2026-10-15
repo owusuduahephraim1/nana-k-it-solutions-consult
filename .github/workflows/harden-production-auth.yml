@@ -1,0 +1,52 @@
+name: Harden production authentication
+
+on:
+  push:
+    branches:
+      - production-readiness-2026-10-14
+    paths:
+      - ".production-auth-patch-trigger"
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Apply authentication hardening
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("worker/src/backoffice.js")
+          s=p.read_text()
+          old="const {payload}=await jwtVerify(match[1],jwks(env),{issuer:new URL(base).origin});"
+          new="const {payload}=await jwtVerify(match[1],jwks(env),{issuer:base,audience:base});"
+          if old not in s:
+              raise SystemExit("JWT verifier pattern not found")
+          s=s.replace(old,new)
+          old2="if(admin&&!adminEmails(env).has(user.email)){"
+          new2="if(admin&&(!adminEmails(env).has(user.email)||String(user.role||'').toLowerCase()!=='admin')){"
+          if old2 not in s:
+              raise SystemExit("Admin authorization pattern not found")
+          s=s.replace(old2,new2)
+          p.write_text(s)
+          PY
+
+      - name: Validate Worker
+        run: |
+          cd worker
+          npm install
+          npm run check
+
+      - name: Commit hardening
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker/src/backoffice.js worker/package-lock.json
+          git commit -m "Harden Neon Auth token and admin role validation"
+          git push
