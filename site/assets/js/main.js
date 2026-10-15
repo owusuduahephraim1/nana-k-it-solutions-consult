@@ -1,6 +1,5 @@
 (() => {
   const cfg = window.NANAK_CONFIG || {};
-  const samples = window.NANAK_SAMPLE_DATA || { projects: [], testimonials: [], blog: [] };
 
   const apiUrl = (path) => `${(cfg.apiBaseUrl || '').replace(/\/$/, '')}${path}`;
   const escapeHtml = (value='') => String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -74,7 +73,7 @@
   }
   initRemoteSupportLinks();
 
-  // Analytics placeholder. It activates only after replacing G-XXXXXXXXXX.
+  // Analytics activates only when a real measurement ID is configured.
   if (cfg.googleAnalyticsId && cfg.googleAnalyticsId !== 'G-XXXXXXXXXX') {
     const s = document.createElement('script');
     s.async = true;
