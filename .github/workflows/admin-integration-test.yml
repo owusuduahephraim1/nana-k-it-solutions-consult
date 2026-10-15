@@ -1,0 +1,151 @@
+name: Test production admin workspace
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".admin-integration-test-trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AUTH_URL: "https://ep-square-mountain-b56mr71c.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth"
+      API_URL: "https://nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev"
+      SITE_ORIGIN: "https://owusuduahephraim1.github.io"
+      ADMIN_EMAIL: "nduah385@gmail.com"
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install Worker dependencies
+        working-directory: worker
+        run: npm ci
+
+      - name: Create isolated administrator auth session
+        run: |
+          set -euo pipefail
+          PASSWORD="NkAdmin-$(openssl rand -hex 18)-Aa1!"
+          echo "::add-mask::$PASSWORD"
+
+          status="$(curl -sS -c /tmp/nanak-admin-cookies.txt -o /tmp/admin-signup.json -w '%{http_code}'             -H 'Content-Type: application/json'             -H "Origin: $SITE_ORIGIN"             --data-binary "$(jq -nc --arg name 'Nana K Admin Integration Test' --arg email "$ADMIN_EMAIL" --arg password "$PASSWORD" '{name:$name,email:$email,password:$password}')"             "$AUTH_URL/sign-up/email")"
+
+          if [ "$status" != "200" ] && [ "$status" != "201" ]; then
+            cat /tmp/admin-signup.json
+            echo "Admin test signup failed with HTTP $status"
+            exit 1
+          fi
+          echo "Temporary administrator auth session created."
+
+      - name: Verify temporary administrator identity
+        working-directory: worker
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+          import { neon } from '@neondatabase/serverless';
+          const sql=neon(process.env.DATABASE_URL);
+          const users=await sql.query(
+            'UPDATE neon_auth."user" SET "emailVerified"=true WHERE lower(email)=lower($1) RETURNING id,email',
+            [process.env.ADMIN_EMAIL]
+          );
+          if (!users[0]) throw new Error('Temporary administrator auth user missing.');
+          fs.appendFileSync(process.env.GITHUB_ENV, `TEST_ADMIN_AUTH_USER_ID=${users[0].id}\n`);
+          console.log('Temporary administrator identity verified.');
+          EOF
+
+      - name: Verify authenticated administrator API and R2 management
+        run: |
+          set -euo pipefail
+          token_json="$(curl -sS -b /tmp/nanak-admin-cookies.txt "$AUTH_URL/token")"
+          TOKEN="$(printf '%s' "$token_json" | jq -r '.token // empty')"
+          test -n "$TOKEN"
+          echo "::add-mask::$TOKEN"
+
+          overview_code="$(curl -sS -o /tmp/admin-overview.json -w '%{http_code}'             -H "Origin: $SITE_ORIGIN"             -H "Authorization: Bearer $TOKEN"             "$API_URL/api/admin/overview")"
+          if [ "$overview_code" != "200" ]; then
+            cat /tmp/admin-overview.json
+            echo "Admin overview failed with HTTP $overview_code"
+            exit 1
+          fi
+          jq -e '.stats and .user.email == "nduah385@gmail.com"' /tmp/admin-overview.json >/dev/null
+
+          stamp="$(date +%s%N)"
+          project_payload="$(jq -nc --arg stamp "$stamp" '{
+            title:("Admin Integration Test "+$stamp),
+            slug:("admin-integration-test-"+$stamp),
+            category:"Testing",
+            description:"Temporary unpublished production administration integration test.",
+            challenge:"Verify secure administrator write access.",
+            solution:"Create and remove an unpublished record through the protected API.",
+            technologies:"Neon Auth, Cloudflare Worker, Neon PostgreSQL",
+            result:"Administrative content management verified.",
+            image_url:"",
+            is_published:false
+          }')"
+
+          create_code="$(curl -sS -o /tmp/admin-project-create.json -w '%{http_code}'             -X POST             -H "Origin: $SITE_ORIGIN"             -H "Authorization: Bearer $TOKEN"             -H 'Content-Type: application/json'             --data-binary "$project_payload"             "$API_URL/api/admin/projects")"
+          test "$create_code" = "201"
+          PROJECT_ID="$(jq -r '.data.id // empty' /tmp/admin-project-create.json)"
+          test -n "$PROJECT_ID"
+          echo "TEST_ADMIN_PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
+
+          delete_code="$(curl -sS -o /tmp/admin-project-delete.json -w '%{http_code}'             -X DELETE             -H "Origin: $SITE_ORIGIN"             -H "Authorization: Bearer $TOKEN"             "$API_URL/api/admin/projects/$PROJECT_ID")"
+          test "$delete_code" = "200"
+
+          FILE_NAME="admin-integration-test-$stamp.txt"
+          printf 'Nana K administrator R2 integration test\n' > "/tmp/$FILE_NAME"
+
+          upload_code="$(curl -sS -o /tmp/admin-file-upload.json -w '%{http_code}'             -X POST             -H "Origin: $SITE_ORIGIN"             -H "Authorization: Bearer $TOKEN"             -F "purpose=general"             -F "file=@/tmp/$FILE_NAME;type=text/plain"             "$API_URL/api/admin/files/upload")"
+          if [ "$upload_code" != "201" ]; then
+            cat /tmp/admin-file-upload.json
+            echo "Admin file upload failed with HTTP $upload_code"
+            exit 1
+          fi
+
+          FILE_ID="$(jq -r '.record.id // empty' /tmp/admin-file-upload.json)"
+          FILE_KEY="$(jq -r '.key // empty' /tmp/admin-file-upload.json)"
+          FILE_URL="$(jq -r '.url // empty' /tmp/admin-file-upload.json)"
+          test -n "$FILE_ID"
+          test -n "$FILE_KEY"
+          test -n "$FILE_URL"
+          echo "TEST_ADMIN_FILE_ID=$FILE_ID" >> "$GITHUB_ENV"
+          echo "TEST_R2_KEY=$FILE_KEY" >> "$GITHUB_ENV"
+
+          read_code="$(curl -sS -o /tmp/admin-file-read.txt -w '%{http_code}' "$FILE_URL")"
+          test "$read_code" = "200"
+          grep -q "administrator R2 integration test" /tmp/admin-file-read.txt
+
+          file_delete_code="$(curl -sS -o /tmp/admin-file-delete.json -w '%{http_code}'             -X DELETE             -H "Origin: $SITE_ORIGIN"             -H "Authorization: Bearer $TOKEN"             "$API_URL/api/admin/files/$FILE_ID")"
+          test "$file_delete_code" = "200"
+
+          gone_code="$(curl -sS -o /tmp/admin-file-gone.txt -w '%{http_code}' "$FILE_URL?deleted=$stamp")"
+          test "$gone_code" = "404"
+
+          echo "Admin authentication, dashboard access, content write/delete, R2 upload/read/delete all passed."
+
+      - name: Cleanup temporary admin test records
+        if: always()
+        working-directory: worker
+        run: |
+          node --input-type=module <<'EOF'
+          import { neon } from '@neondatabase/serverless';
+          if (!process.env.DATABASE_URL) process.exit(0);
+          const sql=neon(process.env.DATABASE_URL);
+          await sql.query("DELETE FROM projects WHERE title LIKE 'Admin Integration Test %'");
+          await sql.query("DELETE FROM managed_files WHERE original_name LIKE 'admin-integration-test-%'");
+          console.log('Temporary admin database records cleaned.');
+          EOF
+
+          if [ -n "${TEST_R2_KEY:-}" ]; then
+            npx wrangler r2 object delete "nana-k-it-solutions-consult-assets/$TEST_R2_KEY" --remote >/dev/null 2>&1 || true
+          fi
