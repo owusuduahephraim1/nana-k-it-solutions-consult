@@ -1,0 +1,85 @@
+name: Validate production readiness
+
+on:
+  push:
+    branches:
+      - production-readiness-2026-10-14
+    paths:
+      - ".production-readiness-validation-trigger"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Worker dependencies
+        run: npm ci
+
+      - name: Validate Worker source and bundle
+        run: |
+          npm run check
+          npx wrangler deploy --dry-run --outdir /tmp/nanak-worker-dryrun
+
+      - name: Verify production database schema
+        run: |
+          node --input-type=module <<'EOF'
+          import { neon } from '@neondatabase/serverless';
+          if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is missing');
+          const sql=neon(process.env.DATABASE_URL);
+          const rows=await sql`
+            SELECT
+              to_regclass('public.site_settings') IS NOT NULL AS site_settings,
+              to_regclass('public.managed_files') IS NOT NULL AS managed_files,
+              to_regclass('public.admin_notifications') IS NOT NULL AS admin_notifications,
+              to_regclass('public.admin_audit_log') IS NOT NULL AS admin_audit_log,
+              to_regclass('public.ticket_updates') IS NOT NULL AS ticket_updates,
+              (SELECT count(*)::int FROM projects WHERE is_published=true) AS public_projects,
+              (SELECT count(*)::int FROM testimonials WHERE is_published=true) AS public_testimonials,
+              (SELECT count(*)::int FROM blog_posts WHERE is_published=true) AS public_posts
+          `;
+          const r=rows[0];
+          for (const key of ['site_settings','managed_files','admin_notifications','admin_audit_log','ticket_updates']) {
+            if (!r[key]) throw new Error('Missing required database object: '+key);
+          }
+          console.log('Production DB schema OK.', {
+            public_projects:r.public_projects,
+            public_testimonials:r.public_testimonials,
+            public_posts:r.public_posts
+          });
+          EOF
+
+      - name: Verify Neon Auth endpoints
+        working-directory: .
+        run: |
+          set -euo pipefail
+          AUTH="https://ep-square-mountain-b56mr71c.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth"
+          curl -fsS "$AUTH/.well-known/jwks.json" -o /tmp/jwks.json
+          jq -e '.keys | length > 0' /tmp/jwks.json >/dev/null
+          jq -e '.keys[] | select(.alg=="EdDSA" and .crv=="Ed25519")' /tmp/jwks.json >/dev/null
+          curl -fsSL "https://esm.sh/@neondatabase/auth?bundle" -o /tmp/neon-auth-client.mjs
+          test -s /tmp/neon-auth-client.mjs
+          echo "Neon Auth JWKS and browser SDK are reachable."
+
+      - name: Verify public workspace files
+        working-directory: .
+        run: |
+          set -euo pipefail
+          test -f site/admin.html
+          test -f site/client-portal.html
+          test -f site/remote-support.html
+          test -f site/assets/js/admin.js
+          test -f site/assets/js/client-portal.js
+          test -f site/assets/css/workspace.css
+          ! grep -R "Google Maps Embed Placeholder\|Professional profile placeholder\|starter build are sample case material\|secure portal placeholder\|Authentication is intentionally disabled" -n site
+          grep -q 'meta name="robots" content="noindex,nofollow,noarchive"' site/admin.html
+          grep -q 'meta name="robots" content="noindex,nofollow,noarchive"' site/client-portal.html
+          echo "Public workspace files and launch cleanup OK."
