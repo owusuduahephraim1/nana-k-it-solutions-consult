@@ -82,10 +82,14 @@ for(const match of sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)){
 }
 
 // Operational configuration sanity.
+const dataJs=read('assets/js/data.js');
+if(/Sample Client|Replace these sample|sample testimonials/i.test(dataJs)) fail('Bundled sample client content remains in assets/js/data.js.');
+
 const config=read('assets/js/config.js');
 if(!config.includes('nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev')) fail('Frontend Worker URL is missing or incorrect.');
 if(!config.includes('0x4AAAAAAFWx04AEskoZCBMj')) fail('Authorized Turnstile site key is missing.');
 if(!config.includes('neonAuthUrl')) fail('Neon Auth URL is missing from frontend config.');
+if(config.includes('G-XXXXXXXXXX')) fail('Placeholder analytics ID remains in production config.');
 
 const robots=read('robots.txt');
 if(!robots.includes(base+'/sitemap.xml')) fail('robots.txt does not reference the production sitemap.');
