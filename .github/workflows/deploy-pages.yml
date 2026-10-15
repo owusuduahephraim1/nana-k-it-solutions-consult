@@ -7,6 +7,7 @@ on:
     paths:
       - "site/**"
       - "scripts/validate-site.mjs"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -42,3 +43,24 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Smoke test live Pages
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -e
+          base="${PAGE_URL%/}"
+          for path in / /privacy.html /terms.html /admin.html /client-portal.html /remote-support.html /assets/js/config.js; do
+            ok=0
+            for attempt in 1 2 3 4 5 6; do
+              code="$(curl -sS -L -o /tmp/page-smoke -w '%{http_code}' "${base}${path}?deploy=${GITHUB_SHA}")"
+              if [ "$code" = "200" ]; then ok=1; break; fi
+              echo "Waiting for ${path} (attempt ${attempt}, HTTP ${code})"
+              sleep 5
+            done
+            test "$ok" = "1"
+          done
+          curl -fsSL "${base}/admin.html?deploy=${GITHUB_SHA}" | grep -qi 'noindex'
+          curl -fsSL "${base}/client-portal.html?deploy=${GITHUB_SHA}" | grep -qi 'noindex'
+          curl -fsSL "${base}/assets/js/config.js?deploy=${GITHUB_SHA}" | grep -q 'nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev'
+          echo "Live GitHub Pages smoke test passed."
