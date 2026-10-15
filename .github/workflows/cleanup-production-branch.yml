@@ -1,0 +1,29 @@
+name: Clean production-readiness branch
+
+on:
+  push:
+    branches:
+      - production-readiness-2026-10-14
+    paths:
+      - ".cleanup-production-branch-trigger"
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Remove one-time implementation workflows and triggers
+        run: |
+          rm -f             .github/workflows/apply-production-upgrade.yml             .github/workflows/harden-production-auth.yml             .github/workflows/final-public-readiness.yml             .github/workflows/final-auth-policy.yml             .github/workflows/validate-production-readiness.yml             .github/workflows/cleanup-production-branch.yml             .production-upgrade-trigger             .production-auth-patch-trigger             .public-readiness-polish-trigger             .final-auth-policy-trigger             .production-readiness-validation-trigger             .cleanup-production-branch-trigger
+      - name: Commit branch cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Clean one-time production upgrade tooling"
+          git push
