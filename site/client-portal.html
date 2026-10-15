@@ -27,13 +27,13 @@
         <h1 style="font-size:2.2rem">Client Portal</h1>
         <p class="muted">Sign in with the same verified email address you used for your support ticket or consultation request.</p>
         <button class="btn btn-primary workspace-google" id="client-google"><i class="fa-brands fa-google"></i> Continue with Google</button>
-        <div class="workspace-divider"><span>or</span></div>
-        <form id="client-login-form">
+        <div class="workspace-divider" hidden><span>or</span></div>
+        <form id="client-login-form" hidden>
           <div class="field"><label for="client-email">Email</label><input id="client-email" name="email" type="email" autocomplete="username" required></div>
           <div class="field" style="margin-top:.8rem"><label for="client-password">Password</label><input id="client-password" name="password" type="password" autocomplete="current-password" required minlength="8"></div>
           <button class="btn btn-primary" type="submit" style="margin-top:1rem;width:100%">Sign in</button>
         </form>
-        <details class="workspace-signup">
+        <details class="workspace-signup" hidden>
           <summary>Create an email/password account</summary>
           <form id="client-signup-form">
             <div class="field"><label>Name</label><input name="name" autocomplete="name" required></div>
@@ -41,7 +41,7 @@
             <div class="field"><label>Password</label><input name="password" type="password" autocomplete="new-password" required minlength="8"></div>
             <button class="btn btn-secondary" type="submit">Create account</button>
           </form>
-          <p class="muted" style="font-size:.85rem">Google sign-in is recommended because the portal only releases client records to a verified email address.</p>
+          <p class="muted" style="font-size:.85rem">The portal releases client records only to a verified identity whose email matches the original service request.</p>
         </details>
         <div class="form-status" id="client-auth-status"></div>
       </div>

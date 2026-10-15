@@ -192,7 +192,7 @@
     const grid = document.querySelector('[data-project-grid]');
     if (!grid) return;
     const data = await fetchApi('/api/projects', []);
-    grid.innerHTML = data.map(projectCard).join('');
+    grid.innerHTML = data.length ? data.map(projectCard).join('') : '<div class="empty-state">Verified project case studies are being prepared for publication. Contact us to discuss relevant experience for your IT requirement.</div>';
     const buttons = document.querySelectorAll('[data-filter]');
     buttons.forEach(btn => btn.addEventListener('click', () => {
       buttons.forEach(b => b.classList.remove('active'));
@@ -264,7 +264,7 @@
     const p = data.find(x => x.slug === slug) || data[0];
     if (!p) { root.innerHTML = '<div class="empty-state">Article not found.</div>'; return; }
     document.title = `${p.title} | Nana K IT Solutions Consult`;
-    root.innerHTML = `<article class="article"><span class="badge">${escapeHtml(p.category || 'Insights')}</span><h1 style="font-size:clamp(2rem,5vw,3.6rem);margin-top:.8rem">${escapeHtml(p.title)}</h1><div class="meta"><span><i class="fa-regular fa-calendar"></i> ${escapeHtml(p.published_at ? new Date(p.published_at).toLocaleDateString() : 'Sample article')}</span><span><i class="fa-regular fa-clock"></i> 4 min read</span></div><img class="image-cover" style="max-height:430px" src="${escapeHtml(safeImage(p.image_url))}" alt="Illustrative image for ${escapeHtml(p.title)}" referrerpolicy="no-referrer"><div class="article-content">${p.content || '<p>Article content will be published soon.</p>'}</div></article>`;
+    root.innerHTML = `<article class="article"><span class="badge">${escapeHtml(p.category || 'Insights')}</span><h1 style="font-size:clamp(2rem,5vw,3.6rem);margin-top:.8rem">${escapeHtml(p.title)}</h1><div class="meta"><span><i class="fa-regular fa-calendar"></i> ${escapeHtml(p.published_at ? new Date(p.published_at).toLocaleDateString() : 'Published article')}</span><span><i class="fa-regular fa-clock"></i> 4 min read</span></div><img class="image-cover" style="max-height:430px" src="${escapeHtml(safeImage(p.image_url))}" alt="Illustrative image for ${escapeHtml(p.title)}" referrerpolicy="no-referrer"><div class="article-content">${p.content || '<p>Article content will be published soon.</p>'}</div></article>`;
   }
 
   initPortfolio();
