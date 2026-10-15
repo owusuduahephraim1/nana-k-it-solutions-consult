@@ -4,6 +4,9 @@ compatibility_date = "2026-08-01"
 workers_dev = true
 
 [vars]
+NEON_AUTH_BASE_URL = "https://ep-square-mountain-b56mr71c.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth"
+NEON_AUTH_JWKS_URL = "https://ep-square-mountain-b56mr71c.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth/.well-known/jwks.json"
+ADMIN_EMAILS = "nduah385@gmail.com"
 ALLOWED_ORIGINS = "https://owusuduahephraim1.github.io,https://nanakitsolutions.com,https://www.nanakitsolutions.com"
 R2_PUBLIC_BASE_URL = "https://nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev"
 MAX_UPLOAD_BYTES = "20971520"
@@ -11,7 +14,6 @@ MAX_UPLOAD_BYTES = "20971520"
 [[ratelimits]]
 name = "FORM_RATE_LIMITER"
 namespace_id = "842762001"
-
   [ratelimits.simple]
   limit = 5
   period = 60
@@ -19,7 +21,6 @@ namespace_id = "842762001"
 [[ratelimits]]
 name = "FORM_GLOBAL_RATE_LIMITER"
 namespace_id = "842762002"
-
   [ratelimits.simple]
   limit = 60
   period = 60

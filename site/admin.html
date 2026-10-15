@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Admin Workspace | Nana K IT Solutions Consult</title>
+  <link rel="icon" href="assets/images/logo.png">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/workspace.css">
+  <script src="https://kit.fontawesome.com/8c4d0f72a4.js" crossorigin="anonymous"></script>
+  <script src="assets/js/config.js"></script>
+</head>
+<body class="workspace-body">
+  <header class="workspace-topbar">
+    <a class="brand" href="index.html"><img src="assets/images/logo.png" alt="Nana K IT Solutions Consult"><span>Nana K IT Solutions Consult</span></a>
+    <div class="workspace-top-actions">
+      <a class="btn btn-secondary" href="index.html"><i class="fa-solid fa-arrow-left"></i> Public website</a>
+      <button class="btn btn-secondary" id="admin-signout" hidden><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="workspace-auth" id="admin-auth">
+      <div class="workspace-auth-card">
+        <span class="eyebrow">Secure administration</span>
+        <h1 style="font-size:2.2rem">Admin Workspace</h1>
+        <p class="muted">Manage enquiries, quotes, tickets, content, uploads, notifications, and operational records. Only authorized verified accounts can enter.</p>
+        <button class="btn btn-primary workspace-google" id="admin-google"><i class="fa-brands fa-google"></i> Continue with Google</button>
+        <div class="workspace-divider"><span>or</span></div>
+        <form id="admin-login-form">
+          <div class="field"><label for="admin-email">Email</label><input id="admin-email" name="email" type="email" autocomplete="username" required></div>
+          <div class="field" style="margin-top:.8rem"><label for="admin-password">Password</label><input id="admin-password" name="password" type="password" autocomplete="current-password" required minlength="8"></div>
+          <button class="btn btn-primary" type="submit" style="margin-top:1rem;width:100%">Sign in</button>
+          <div class="form-status" id="admin-auth-status"></div>
+        </form>
+      </div>
+    </section>
+
+    <section class="workspace-shell" id="admin-workspace" hidden>
+      <aside class="workspace-sidebar">
+        <div class="workspace-user">
+          <strong id="admin-user-name">Administrator</strong>
+          <span id="admin-user-email"></span>
+        </div>
+        <nav class="workspace-nav" aria-label="Admin workspace">
+          <button class="active" data-admin-view="overview"><i class="fa-solid fa-chart-line"></i> Overview</button>
+          <button data-admin-view="contacts"><i class="fa-solid fa-envelope"></i> Contacts</button>
+          <button data-admin-view="quotes"><i class="fa-solid fa-file-invoice"></i> Quotes</button>
+          <button data-admin-view="tickets"><i class="fa-solid fa-ticket"></i> Tickets</button>
+          <button data-admin-view="subscribers"><i class="fa-solid fa-users"></i> Subscribers</button>
+          <button data-admin-view="projects"><i class="fa-solid fa-diagram-project"></i> Portfolio</button>
+          <button data-admin-view="testimonials"><i class="fa-solid fa-star"></i> Testimonials</button>
+          <button data-admin-view="blog"><i class="fa-solid fa-newspaper"></i> Blog</button>
+          <button data-admin-view="files"><i class="fa-solid fa-cloud-arrow-up"></i> Files & Remote Support</button>
+          <button data-admin-view="audit"><i class="fa-solid fa-shield-halved"></i> Audit Log</button>
+        </nav>
+      </aside>
+
+      <section class="workspace-main">
+        <div class="workspace-heading">
+          <div><span class="eyebrow">Operations</span><h1 id="admin-view-title" style="font-size:2rem">Overview</h1></div>
+          <button class="btn btn-secondary" id="admin-refresh"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <div id="admin-content" aria-live="polite"><div class="empty-state">Loading workspace…</div></div>
+      </section>
+    </section>
+  </main>
+  <div class="workspace-toast" id="admin-toast" hidden></div>
+  <script type="module" src="assets/js/admin.js"></script>
+</body>
+</html>

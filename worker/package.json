@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "check": "node --check src/index.js && node --check src/turnstile-gateway.js"
+    "check": "node --check src/index.js && node --check src/backoffice.js && node --check src/turnstile-gateway.js"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.1"
+    "@neondatabase/serverless": "^1.0.1",
+    "jose": "^6.1.0"
   },
   "devDependencies": {
     "wrangler": "^4.36.0"

@@ -2,52 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Client Portal | Nana K IT Solutions Consult</title>
-  <meta name="description" content="Client portal placeholder for future secure ticket and quote access.">
-  <meta name="theme-color" content="#072b62">
-  <meta name="robots" content="noindex,follow">
-  <link rel="canonical" href="https://owusuduahephraim1.github.io/nana-k-it-solutions-consult/client-portal.html">
-  <link rel="icon" type="image/png" href="assets/images/favicon.png">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Client Portal | Nana K IT Solutions Consult">
-  <meta property="og:description" content="Client portal placeholder for future secure ticket and quote access.">
-  <meta property="og:url" content="https://owusuduahephraim1.github.io/nana-k-it-solutions-consult/client-portal.html">
-  <meta property="og:image" content="https://owusuduahephraim1.github.io/nana-k-it-solutions-consult/assets/images/logo.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="icon" href="assets/images/logo.png">
   <link rel="stylesheet" href="assets/css/styles.css">
-  
+  <link rel="stylesheet" href="assets/css/workspace.css">
+  <script src="https://kit.fontawesome.com/8c4d0f72a4.js" crossorigin="anonymous"></script>
+  <script src="assets/js/config.js"></script>
 </head>
-<body>
-<a class="skip-link" href="#main">Skip to main content</a>
-<header class="site-header">
-  <div class="container navbar">
-    <a class="brand" href="index.html" aria-label="Nana K IT Solutions Consult home">
-      <img src="assets/images/logo.png" alt="Nana K IT Solutions Consult logo">
-      <span>Nana K IT<br>Solutions Consult</span>
-    </a>
-    <button class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
-    <nav class="nav-links" id="site-nav" data-nav-links aria-label="Main navigation"><a href="index.html">Home</a><a href="about.html">About</a><a href="services.html">Services</a><a href="portfolio.html">Portfolio</a><a href="case-studies.html">Case Studies</a><a href="blog.html">Insights</a><a href="contact.html">Contact</a></nav>
-    <a class="btn btn-primary nav-cta" href="quote.html">Free Consultation</a>
-  </div>
-</header>
-<main id="main"><section class="page-hero"><div class="container"><div class="breadcrumb"><a href="index.html">Home</a> / Client Portal</div><span class="eyebrow">Nana K IT Solutions Consult</span><h1>Client Portal</h1><p class="lead">A secure portal placeholder reserved for authenticated client access.</p></div></section><section class="section"><div class="container"><div class="portal-box"><div class="notice" style="margin-bottom:1rem"><strong>Secure by design:</strong> This starter build does not expose ticket or quote data behind an insecure email-only login. Add a real authentication layer before enabling client records.</div><div class="form-shell"><h2 style="font-size:1.6rem">Client sign in</h2><p class="muted">Authentication is intentionally disabled in this base release. The UI is ready for a future secure authentication provider or a Worker-based session system.</p><div class="field"><label for="portal-email">Email</label><input id="portal-email" type="email" placeholder="you@company.com" disabled></div><div class="field" style="margin-top:.8rem"><label for="portal-password">Password</label><input id="portal-password" type="password" placeholder="••••••••" disabled></div><button class="btn btn-primary" disabled style="margin-top:1rem">Sign in</button><p class="muted" style="margin-top:1rem;font-size:.9rem">Recommended next step: add authenticated sessions before creating <code>GET /api/client/tickets</code> or <code>GET /api/client/quotes</code>.</p></div></div></div></section></main>
-<footer class="site-footer">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand"><img src="assets/images/logo.png" alt="Nana K IT Solutions Consult logo"><p>Practical IT support, networking, MIS, consulting, cybersecurity basics, and system administration for growing organizations.</p><div class="socials" aria-label="Social links"><a href="https://web.facebook.com/syrresa/directory_links" aria-label="Facebook" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-facebook-f"></i></a><a href="https://www.linkedin.com/in/ephraim-owusu-duah-720385335" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-linkedin-in"></i></a></div></div>
-      <div><h3>Company</h3><ul class="footer-links"><li><a href="about.html">About</a></li><li><a href="portfolio.html">Portfolio</a></li><li><a href="case-studies.html">Case Studies</a></li><li><a href="testimonials.html">Testimonials</a></li><li><a href="blog.html">Insights</a></li></ul></div>
-      <div><h3>Support</h3><ul class="footer-links"><li><a href="support.html">IT Support Ticket</a></li><li><a href="remote-support.html">Remote Support</a></li><li><a href="knowledge-base.html">Help Center</a></li><li><a href="faq.html">FAQ</a></li><li><a href="client-portal.html">Client Portal</a></li></ul></div>
-      <div><h3>Newsletter</h3><p>Occasional practical IT tips for small and growing businesses.</p><form class="newsletter-form" data-api-path="/api/newsletter"><label class="sr-only" for="footer-email">Email address</label><input id="footer-email" name="email" type="email" placeholder="you@company.com" required><input class="honeypot" type="text" name="website" tabindex="-1" autocomplete="off"><button class="btn btn-light" type="submit">Subscribe</button><div class="form-status"></div></form></div>
+<body class="workspace-body">
+  <header class="workspace-topbar">
+    <a class="brand" href="index.html"><img src="assets/images/logo.png" alt="Nana K IT Solutions Consult"><span>Nana K IT Solutions Consult</span></a>
+    <div class="workspace-top-actions">
+      <a class="btn btn-secondary" href="index.html"><i class="fa-solid fa-arrow-left"></i> Public website</a>
+      <button class="btn btn-secondary" id="client-signout" hidden><i class="fa-solid fa-right-from-bracket"></i> Sign out</button>
     </div>
-    <div class="footer-bottom"><span>© <span data-year></span> Nana K IT Solutions Consult. All rights reserved.</span><span>nduah385@gmail.com · +233 24 024 0898</span></div>
-  </div>
-</footer>
-<a class="whatsapp-float" data-whatsapp href="#" aria-label="Chat with Nana K IT Solutions Consult on WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/main.js" defer></script>
+  </header>
+
+  <main>
+    <section class="workspace-auth" id="client-auth">
+      <div class="workspace-auth-card">
+        <span class="eyebrow">Secure client access</span>
+        <h1 style="font-size:2.2rem">Client Portal</h1>
+        <p class="muted">Sign in with the same verified email address you used for your support ticket or consultation request.</p>
+        <button class="btn btn-primary workspace-google" id="client-google"><i class="fa-brands fa-google"></i> Continue with Google</button>
+        <div class="workspace-divider"><span>or</span></div>
+        <form id="client-login-form">
+          <div class="field"><label for="client-email">Email</label><input id="client-email" name="email" type="email" autocomplete="username" required></div>
+          <div class="field" style="margin-top:.8rem"><label for="client-password">Password</label><input id="client-password" name="password" type="password" autocomplete="current-password" required minlength="8"></div>
+          <button class="btn btn-primary" type="submit" style="margin-top:1rem;width:100%">Sign in</button>
+        </form>
+        <details class="workspace-signup">
+          <summary>Create an email/password account</summary>
+          <form id="client-signup-form">
+            <div class="field"><label>Name</label><input name="name" autocomplete="name" required></div>
+            <div class="field"><label>Email</label><input name="email" type="email" autocomplete="email" required></div>
+            <div class="field"><label>Password</label><input name="password" type="password" autocomplete="new-password" required minlength="8"></div>
+            <button class="btn btn-secondary" type="submit">Create account</button>
+          </form>
+          <p class="muted" style="font-size:.85rem">Google sign-in is recommended because the portal only releases client records to a verified email address.</p>
+        </details>
+        <div class="form-status" id="client-auth-status"></div>
+      </div>
+    </section>
+
+    <section class="client-portal-shell" id="client-workspace" hidden>
+      <div class="container">
+        <div class="workspace-heading">
+          <div><span class="eyebrow">Client account</span><h1 style="font-size:2.2rem">Your support & consultation workspace</h1><p class="muted" id="client-identity"></p></div>
+          <a class="btn btn-primary" href="support.html"><i class="fa-solid fa-plus"></i> New support ticket</a>
+        </div>
+
+        <div class="grid grid-2">
+          <section class="workspace-panel">
+            <div class="workspace-panel-head"><h2>Support tickets</h2><button class="btn btn-secondary" id="refresh-client-tickets">Refresh</button></div>
+            <div id="client-tickets"><div class="empty-state">Loading tickets…</div></div>
+          </section>
+          <section class="workspace-panel">
+            <div class="workspace-panel-head"><h2>Consultation requests</h2></div>
+            <div id="client-quotes"><div class="empty-state">Loading consultation requests…</div></div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="workspace-toast" id="client-toast" hidden></div>
+  <script type="module" src="assets/js/client-portal.js"></script>
 </body>
 </html>

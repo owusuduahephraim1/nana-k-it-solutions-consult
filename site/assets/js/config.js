@@ -1,6 +1,7 @@
 window.NANAK_CONFIG = {
   apiBaseUrl: "https://nana-k-it-solutions-consult-api.edusentia-enterprise-neon.workers.dev",
   siteUrl: "https://owusuduahephraim1.github.io/nana-k-it-solutions-consult",
+  neonAuthUrl: "https://ep-square-mountain-b56mr71c.neonauth.c-7.us-east-2.aws.neon.tech/neondb/auth",
   businessName: "Nana K IT Solutions Consult",
   email: "nduah385@gmail.com",
   phoneDisplay: "+233 24 024 0898",

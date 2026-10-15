@@ -45,11 +45,34 @@
     if (!num) { el.hidden = true; return; }
     el.href = `https://wa.me/${num}?text=${encodeURIComponent('Hello Nana K IT Solutions Consult, I would like to make an enquiry.')}`;
   });
-  document.querySelectorAll('[data-remote-support]').forEach(el => {
-    const url = String(cfg.remoteSupportFileUrl || '').trim();
-    if (!url) { el.hidden = true; return; }
-    el.href = url;
-  });
+  async function initRemoteSupportLinks() {
+    let url = String(cfg.remoteSupportFileUrl || '').trim();
+    let name = '';
+    try {
+      const res = await fetch(apiUrl('/api/settings/public'), { headers:{'Accept':'application/json'}, cache:'no-store' });
+      if (res.ok) {
+        const payload = await res.json();
+        url = String(payload?.data?.remote_support_file_url || url).trim();
+        name = String(payload?.data?.remote_support_file_name || '').trim();
+      }
+    } catch (_) {}
+    document.querySelectorAll('[data-remote-support]').forEach(el => {
+      if (!url) { el.hidden = true; return; }
+      el.hidden = false;
+      el.href = url;
+      if (name) el.setAttribute('download', name);
+    });
+    document.querySelectorAll('[data-remote-status]').forEach(el => {
+      if (url) {
+        el.textContent = name ? `Approved download ready: ${name}` : 'Approved remote-support download is ready.';
+        el.className = 'form-status show success';
+      } else {
+        el.textContent = 'No remote-support installer is currently published. Please open a support ticket first.';
+        el.className = 'form-status show error';
+      }
+    });
+  }
+  initRemoteSupportLinks();
 
   // Analytics placeholder. It activates only after replacing G-XXXXXXXXXX.
   if (cfg.googleAnalyticsId && cfg.googleAnalyticsId !== 'G-XXXXXXXXXX') {
@@ -155,7 +178,7 @@
   function projectCard(p) {
     const slug = p.slug || slugify(p.title);
     return `<article class="media-card card-hover project-card" data-category="${escapeHtml(p.category)}">
-      <img src="${escapeHtml(safeImage(p.image_url))}" alt="Placeholder image for ${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer">
+      <img src="${escapeHtml(safeImage(p.image_url))}" alt="Illustrative image for ${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="body">
         <span class="badge">${escapeHtml(p.category)}</span>
         <h3 style="margin-top:.75rem">${escapeHtml(p.title)}</h3>
@@ -168,7 +191,7 @@
   async function initPortfolio() {
     const grid = document.querySelector('[data-project-grid]');
     if (!grid) return;
-    const data = await fetchApi('/api/projects', samples.projects);
+    const data = await fetchApi('/api/projects', []);
     grid.innerHTML = data.map(projectCard).join('');
     const buttons = document.querySelectorAll('[data-filter]');
     buttons.forEach(btn => btn.addEventListener('click', () => {
@@ -185,13 +208,13 @@
     const root = document.querySelector('[data-project-detail]');
     if (!root) return;
     const slug = new URLSearchParams(location.search).get('slug');
-    const data = await fetchApi('/api/projects', samples.projects);
+    const data = await fetchApi('/api/projects', []);
     const p = data.find(x => (x.slug || slugify(x.title)) === slug) || data[0];
     if (!p) { root.innerHTML = '<div class="empty-state">Project not found.</div>'; return; }
     document.title = `${p.title} | Nana K IT Solutions Consult`;
     root.innerHTML = `<div class="split">
       <div><span class="badge">${escapeHtml(p.category)}</span><h1 style="font-size:clamp(2rem,4vw,3.5rem);margin-top:.8rem">${escapeHtml(p.title)}</h1><p class="lead">${escapeHtml(p.description)}</p></div>
-      <img class="image-cover" style="min-height:340px" src="${escapeHtml(safeImage(p.image_url))}" alt="Placeholder image for ${escapeHtml(p.title)}" referrerpolicy="no-referrer">
+      <img class="image-cover" style="min-height:340px" src="${escapeHtml(safeImage(p.image_url))}" alt="Illustrative image for ${escapeHtml(p.title)}" referrerpolicy="no-referrer">
     </div>
     <div class="grid grid-2" style="margin-top:2rem">
       <section class="card"><div class="icon-box"><i class="fa-solid fa-triangle-exclamation"></i></div><h2 style="font-size:1.4rem">Challenge</h2><p>${escapeHtml(p.challenge)}</p></section>
@@ -207,20 +230,24 @@
   async function initTestimonials() {
     const grid = document.querySelector('[data-testimonials-grid]');
     if (!grid) return;
-    const data = await fetchApi('/api/testimonials', samples.testimonials);
+    const data = await fetchApi('/api/testimonials', []);
+    if (!data.length) {
+      grid.innerHTML = '<div class="empty-state">No client-approved testimonials are published yet.</div>';
+      return;
+    }
     grid.innerHTML = data.map(testimonialCard).join('');
   }
 
   function blogCard(p) {
     return `<article class="media-card card-hover">
-      <img src="${escapeHtml(safeImage(p.image_url))}" alt="Placeholder image for ${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer">
+      <img src="${escapeHtml(safeImage(p.image_url))}" alt="Illustrative image for ${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer">
       <div class="body"><span class="badge">${escapeHtml(p.category || 'Insights')}</span><h3 style="margin-top:.75rem">${escapeHtml(p.title)}</h3><p class="muted">${escapeHtml(p.excerpt || '')}</p><a class="btn btn-secondary" href="blog-post.html?slug=${encodeURIComponent(p.slug)}">Read article <i class="fa-solid fa-arrow-right"></i></a></div>
     </article>`;
   }
   async function initBlog() {
     const grid = document.querySelector('[data-blog-grid]');
     if (!grid) return;
-    const data = await fetchApi('/api/blog', samples.blog);
+    const data = await fetchApi('/api/blog', []);
     grid.innerHTML = data.map(blogCard).join('');
     const search = document.querySelector('[data-blog-search]');
     if (search) search.addEventListener('input', () => {
@@ -233,11 +260,11 @@
     const root = document.querySelector('[data-blog-post]');
     if (!root) return;
     const slug = new URLSearchParams(location.search).get('slug');
-    const data = await fetchApi('/api/blog', samples.blog);
+    const data = await fetchApi('/api/blog', []);
     const p = data.find(x => x.slug === slug) || data[0];
     if (!p) { root.innerHTML = '<div class="empty-state">Article not found.</div>'; return; }
     document.title = `${p.title} | Nana K IT Solutions Consult`;
-    root.innerHTML = `<article class="article"><span class="badge">${escapeHtml(p.category || 'Insights')}</span><h1 style="font-size:clamp(2rem,5vw,3.6rem);margin-top:.8rem">${escapeHtml(p.title)}</h1><div class="meta"><span><i class="fa-regular fa-calendar"></i> ${escapeHtml(p.published_at ? new Date(p.published_at).toLocaleDateString() : 'Sample article')}</span><span><i class="fa-regular fa-clock"></i> 4 min read</span></div><img class="image-cover" style="max-height:430px" src="${escapeHtml(safeImage(p.image_url))}" alt="Placeholder image for ${escapeHtml(p.title)}" referrerpolicy="no-referrer"><div class="article-content">${p.content || '<p>Article content will be published soon.</p>'}</div></article>`;
+    root.innerHTML = `<article class="article"><span class="badge">${escapeHtml(p.category || 'Insights')}</span><h1 style="font-size:clamp(2rem,5vw,3.6rem);margin-top:.8rem">${escapeHtml(p.title)}</h1><div class="meta"><span><i class="fa-regular fa-calendar"></i> ${escapeHtml(p.published_at ? new Date(p.published_at).toLocaleDateString() : 'Sample article')}</span><span><i class="fa-regular fa-clock"></i> 4 min read</span></div><img class="image-cover" style="max-height:430px" src="${escapeHtml(safeImage(p.image_url))}" alt="Illustrative image for ${escapeHtml(p.title)}" referrerpolicy="no-referrer"><div class="article-content">${p.content || '<p>Article content will be published soon.</p>'}</div></article>`;
   }
 
   initPortfolio();

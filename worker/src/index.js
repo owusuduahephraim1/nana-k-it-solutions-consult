@@ -1,11 +1,12 @@
 // Nana K IT Solutions Consult API
 import { neon } from '@neondatabase/serverless';
+import { handleBackoffice } from './backoffice.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getAllowedOrigins(env) {
-  return String(env.ALLOWED_ORIGINS || 'https://owusuduahephraim1.github.io,https://nanakitsolutions.com,https://www.nanakitsolutions.com')
+  return String(env.ALLOWED_ORIGINS || 'https://owusuduahephraim1.github.io')
     .split(',').map(x => x.trim()).filter(Boolean);
 }
 function corsHeaders(request, env) {
@@ -14,8 +15,9 @@ function corsHeaders(request, env) {
   const selected = origin && allowed.includes(origin) ? origin : allowed[0];
   return {
     'Access-Control-Allow-Origin': selected || 'https://owusuduahephraim1.github.io',
-    'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type,X-Admin-Upload-Key',
+    'Access-Control-Allow-Methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Admin-Upload-Key',
+    'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
 }
@@ -24,8 +26,8 @@ function originAllowed(request, env) {
   if (!origin) return true;
   return getAllowedOrigins(env).includes(origin);
 }
-function json(data, status=200, request=null, env=null) {
-  const headers = { ...JSON_HEADERS, ...(request && env ? corsHeaders(request, env) : {}) };
+function json(data, status=200, request=null, env=null, extraHeaders={}) {
+  const headers = { ...JSON_HEADERS, ...(request && env ? corsHeaders(request, env) : {}), ...extraHeaders };
   return new Response(JSON.stringify(data), { status, headers });
 }
 function text(value, status=200, headers={}) { return new Response(value, { status, headers }); }
@@ -59,15 +61,28 @@ function db(env) {
 }
 function errorResponse(err, request, env) {
   console.error(err);
-  const known = /required|valid|too long|Invalid form/.test(err.message || '');
-  return json({ error: known ? err.message : 'The server could not process the request.' }, known ? 400 : 500, request, env);
+  const message = String(err?.message || '');
+  const known = /required|valid|too long|Invalid form|not found|invalid status|not allowed/i.test(message);
+  return json({ error: known ? message : 'The server could not process the request.' }, known ? 400 : 500, request, env);
+}
+async function notify(sql, type, title, body, entityType=null, entityId=null) {
+  await sql.query(
+    `INSERT INTO admin_notifications (type,title,body,entity_type,entity_id)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [type,title,body,entityType,entityId]
+  );
 }
 
 async function handleContact(request, env) {
   try {
     const body = await readJson(request); assertNoHoneypot(body);
     const sql = db(env);
-    const row = await sql.query(`INSERT INTO contacts (name,email,phone,subject,message) VALUES ($1,$2,$3,$4,$5) RETURNING id,created_at`, [required(body.name,'Name',120),email(body.email),optional(body.phone,40),required(body.subject,'Subject',180),required(body.message,'Message',5000)]);
+    const row = await sql.query(
+      `INSERT INTO contacts (name,email,phone,subject,message)
+       VALUES ($1,$2,$3,$4,$5) RETURNING id,created_at`,
+      [required(body.name,'Name',120),email(body.email),optional(body.phone,40),required(body.subject,'Subject',180),required(body.message,'Message',5000)]
+    );
+    await notify(sql,'contact','New contact message',`${body.name} submitted: ${body.subject}`,'contact',row[0]?.id);
     return json({ message:'Thank you. Your message has been received.', id: row[0]?.id }, 201, request, env);
   } catch (e) { return errorResponse(e, request, env); }
 }
@@ -76,7 +91,12 @@ async function handleQuote(request, env) {
     const body = await readJson(request); assertNoHoneypot(body);
     const sql = db(env);
     const preferred = required(body.preferred_date,'Preferred date',60);
-    const row = await sql.query(`INSERT INTO quotes (name,email,phone,service_type,description,preferred_date) VALUES ($1,$2,$3,$4,$5,$6::timestamptz) RETURNING id,created_at`, [required(body.name,'Name',120),email(body.email),required(body.phone,'Phone',40),required(body.service_type,'Service type',120),required(body.description,'Description',5000),preferred]);
+    const row = await sql.query(
+      `INSERT INTO quotes (name,email,phone,service_type,description,preferred_date)
+       VALUES ($1,$2,$3,$4,$5,$6::timestamptz) RETURNING id,created_at`,
+      [required(body.name,'Name',120),email(body.email),required(body.phone,'Phone',40),required(body.service_type,'Service type',120),required(body.description,'Description',5000),preferred]
+    );
+    await notify(sql,'quote','New consultation request',`${body.name} requested ${body.service_type}`,'quote',row[0]?.id);
     return json({ message:'Your consultation request has been submitted.', id: row[0]?.id }, 201, request, env);
   } catch (e) { return errorResponse(e, request, env); }
 }
@@ -86,7 +106,12 @@ async function handleTicket(request, env) {
     const priority = required(body.priority,'Priority',10).toLowerCase();
     if (!['low','medium','high'].includes(priority)) throw new Error('Priority must be low, medium, or high.');
     const sql = db(env);
-    const row = await sql.query(`INSERT INTO tickets (name,email,issue_type,description,priority) VALUES ($1,$2,$3,$4,$5) RETURNING id,ticket_number,created_at`, [required(body.name,'Name',120),email(body.email),required(body.issue_type,'Issue type',120),required(body.description,'Description',5000),priority]);
+    const row = await sql.query(
+      `INSERT INTO tickets (name,email,issue_type,description,priority)
+       VALUES ($1,$2,$3,$4,$5) RETURNING id,ticket_number,created_at`,
+      [required(body.name,'Name',120),email(body.email),required(body.issue_type,'Issue type',120),required(body.description,'Description',5000),priority]
+    );
+    await notify(sql,'ticket','New support ticket',`${row[0]?.ticket_number || 'Ticket'} from ${body.name}`,'ticket',row[0]?.id);
     return json({ message:`Support ticket ${row[0]?.ticket_number || ''} has been submitted.`, id:row[0]?.id, ticket_number:row[0]?.ticket_number }, 201, request, env);
   } catch (e) { return errorResponse(e, request, env); }
 }
@@ -95,18 +120,53 @@ async function handleNewsletter(request, env) {
     const body = await readJson(request); assertNoHoneypot(body);
     const sql = db(env);
     const addr = email(body.email);
-    await sql.query(`INSERT INTO newsletter_subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`, [addr]);
+    const rows = await sql.query(
+      `INSERT INTO newsletter_subscribers (email,active,unsubscribed_at)
+       VALUES ($1,true,NULL)
+       ON CONFLICT (email) DO UPDATE SET active=true,unsubscribed_at=NULL
+       RETURNING id`,
+      [addr]
+    );
+    await notify(sql,'newsletter','Newsletter subscription',`${addr} subscribed to updates.`,'newsletter',rows[0]?.id);
     return json({ message:'Subscription received. Thank you.' }, 201, request, env);
   } catch (e) { return errorResponse(e, request, env); }
 }
 async function listProjects(request, env) {
-  try { const rows = await db(env).query(`SELECT id,title,slug,category,description,challenge,solution,technologies,result,image_url,created_at FROM projects ORDER BY created_at DESC`); return json({data:rows},200,request,env); } catch(e){ return errorResponse(e,request,env); }
+  try {
+    const rows = await db(env).query(
+      `SELECT id,title,slug,category,description,challenge,solution,technologies,result,image_url,created_at
+       FROM projects WHERE is_published=true ORDER BY created_at DESC`
+    );
+    return json({data:rows},200,request,env);
+  } catch(e){ return errorResponse(e,request,env); }
 }
 async function listTestimonials(request, env) {
-  try { const rows = await db(env).query(`SELECT id,client_name,company,quote,rating,created_at FROM testimonials ORDER BY created_at DESC`); return json({data:rows},200,request,env); } catch(e){ return errorResponse(e,request,env); }
+  try {
+    const rows = await db(env).query(
+      `SELECT id,client_name,company,quote,rating,created_at
+       FROM testimonials WHERE is_published=true ORDER BY created_at DESC`
+    );
+    return json({data:rows},200,request,env);
+  } catch(e){ return errorResponse(e,request,env); }
 }
 async function listBlog(request, env) {
-  try { const rows = await db(env).query(`SELECT id,title,slug,content,excerpt,category,image_url,published_at FROM blog_posts WHERE published_at IS NULL OR published_at <= now() ORDER BY published_at DESC NULLS LAST, id DESC`); return json({data:rows},200,request,env); } catch(e){ return errorResponse(e,request,env); }
+  try {
+    const rows = await db(env).query(
+      `SELECT id,title,slug,content,excerpt,category,image_url,published_at
+       FROM blog_posts
+       WHERE is_published=true AND (published_at IS NULL OR published_at <= now())
+       ORDER BY published_at DESC NULLS LAST, id DESC`
+    );
+    return json({data:rows},200,request,env);
+  } catch(e){ return errorResponse(e,request,env); }
+}
+async function publicSettings(request, env) {
+  try {
+    const rows = await db(env).query(`SELECT key,value FROM site_settings WHERE is_public=true ORDER BY key`);
+    return json({data:Object.fromEntries(rows.map(r => [r.key,r.value]))},200,request,env,{
+      'Cache-Control':'no-store, max-age=0'
+    });
+  } catch(e){ return errorResponse(e,request,env); }
 }
 
 function cleanKey(input) {
@@ -126,7 +186,10 @@ async function uploadFile(request, env) {
     if (file.size > maxBytes) return json({error:`File exceeds the ${Math.round(maxBytes/1024/1024)} MB limit.`},413,request,env);
     const base = file.name.replace(/[^a-zA-Z0-9._-]/g,'-').replace(/-+/g,'-');
     const key = cleanKey(`${folder}/${Date.now()}-${crypto.randomUUID()}-${base}`);
-    await env.STORAGE.put(key, file.stream(), { httpMetadata: { contentType: file.type || 'application/octet-stream', cacheControl: 'no-store, max-age=0' }, customMetadata: { originalName: file.name } });
+    await env.STORAGE.put(key, file.stream(), {
+      httpMetadata: { contentType: file.type || 'application/octet-stream', cacheControl: 'no-store, max-age=0' },
+      customMetadata: { originalName: file.name }
+    });
     const publicBase = String(env.R2_PUBLIC_BASE_URL || new URL(request.url).origin).replace(/\/$/,'');
     return json({message:'File uploaded.', key, url:`${publicBase}/files/${encodeURI(key)}`},201,request,env);
   } catch(e) { return errorResponse(e,request,env); }
@@ -135,55 +198,48 @@ async function serveFile(request, env, keyPart) {
   try {
     const key = cleanKey(keyPart);
     const object = await env.STORAGE.get(key);
-    if (!object) return text('Not found',404);
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set('ETag', object.httpEtag);
-    headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-    headers.set('CDN-Cache-Control', 'no-store');
-    headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
-    headers.set('Pragma', 'no-cache');
-    headers.set('Expires', '0');
-    headers.set('X-Content-Type-Options','nosniff');
-    return new Response(object.body,{headers});
-  } catch (_) {
-    return text('Bad request',400,{
+    const noCache = {
       'Cache-Control':'no-store, no-cache, must-revalidate, max-age=0',
       'CDN-Cache-Control':'no-store',
       'Cloudflare-CDN-Cache-Control':'no-store'
-    });
-  }
+    };
+    if (!object) return text('Not found',404,noCache);
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('ETag', object.httpEtag);
+    Object.entries(noCache).forEach(([k,v]) => headers.set(k,v));
+    headers.set('Pragma','no-cache');
+    headers.set('Expires','0');
+    headers.set('X-Content-Type-Options','nosniff');
+    return new Response(object.body,{headers});
+  } catch (_) { return text('Bad request',400,{'Cache-Control':'no-store'}); }
 }
-
-async function deleteFile(request, env, keyPart) {
+async function deleteLegacyFile(request, env, keyPart) {
   if (!env.R2_UPLOAD_SECRET) return json({error:'R2 upload is not configured.'},503,request,env);
   if (request.headers.get('X-Admin-Upload-Key') !== env.R2_UPLOAD_SECRET) return json({error:'Unauthorized.'},401,request,env);
   try {
     const key = cleanKey(keyPart);
     const existing = await env.STORAGE.head(key);
-    if (!existing) {
-      return json({error:'File not found.'},404,request,env);
-    }
+    if (!existing) return json({error:'File not found.'},404,request,env);
     await env.STORAGE.delete(key);
-    return json({
-      message:'File deleted. It is no longer available from the public file endpoint.',
-      key
-    },200,request,env);
-  } catch (e) {
-    return errorResponse(e,request,env);
-  }
+    return json({message:'File deleted. It is no longer available from the public file endpoint.',key},200,request,env);
+  } catch(e){ return errorResponse(e,request,env); }
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') {
       if (!originAllowed(request, env)) return new Response(null,{status:403});
       return new Response(null,{status:204,headers:corsHeaders(request,env)});
     }
-    if (url.pathname.startsWith('/api/') && !originAllowed(request, env)) return json({error:'Origin not allowed.'},403,request,env);
+    if (url.pathname.startsWith('/api/') && !originAllowed(request, env)) {
+      return json({error:'Origin not allowed.'},403,request,env);
+    }
 
-    if (request.method === 'GET' && url.pathname === '/api/health') return json({ok:true,service:'nanak-it-api'},200,request,env);
+    if (request.method === 'GET' && url.pathname === '/api/health') return json({ok:true,service:'nana-k-it-solutions-consult-api'},200,request,env);
+    if (request.method === 'GET' && url.pathname === '/api/settings/public') return publicSettings(request,env);
+
     if (request.method === 'POST' && url.pathname === '/api/contact') return handleContact(request,env);
     if (request.method === 'POST' && url.pathname === '/api/quote') return handleQuote(request,env);
     if (request.method === 'POST' && url.pathname === '/api/ticket') return handleTicket(request,env);
@@ -191,8 +247,12 @@ export default {
     if (request.method === 'GET' && url.pathname === '/api/projects') return listProjects(request,env);
     if (request.method === 'GET' && url.pathname === '/api/testimonials') return listTestimonials(request,env);
     if (request.method === 'GET' && url.pathname === '/api/blog') return listBlog(request,env);
+
+    const backofficeResponse = await handleBackoffice(request, env, ctx);
+    if (backofficeResponse) return backofficeResponse;
+
     if (request.method === 'POST' && url.pathname === '/api/files/upload') return uploadFile(request,env);
-    if (request.method === 'DELETE' && url.pathname.startsWith('/api/files/')) return deleteFile(request,env,url.pathname.slice('/api/files/'.length));
+    if (request.method === 'DELETE' && url.pathname.startsWith('/api/files/')) return deleteLegacyFile(request,env,url.pathname.slice('/api/files/'.length));
     if (request.method === 'GET' && url.pathname.startsWith('/files/')) return serveFile(request,env,url.pathname.slice('/files/'.length));
     return json({error:'Not found.'},404,request,env);
   }

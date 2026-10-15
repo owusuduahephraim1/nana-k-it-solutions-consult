@@ -87,4 +87,3 @@ psql "$DATABASE_URL" -f database/full_backup.sql
 
 No live credentials or Cloudflare secrets are committed to this repository.
 
-Production readiness workspace implementation in progress.
