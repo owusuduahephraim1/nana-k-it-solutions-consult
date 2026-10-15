@@ -86,7 +86,7 @@ async function identify(request,env,{admin=false}={}){
     if(!user.email_verified){
       return {response:json({error:'A verified account is required. Use Google sign-in or verify your email first.'},403,request,env)};
     }
-    if(admin&&(!adminEmails(env).has(user.email)||String(user.role||'').toLowerCase()!=='admin')){
+    if(admin&&!adminEmails(env).has(user.email)){
       return {response:json({error:'Administrator access is not authorized for this account.'},403,request,env)};
     }
     return {user,payload};
