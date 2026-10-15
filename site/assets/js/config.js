@@ -11,7 +11,7 @@ window.NANAK_CONFIG = {
   location: "Santeo near Cedar Estate; Koforidua Asokore near Methodist JHS Junction Barrier, Eastern Region, Ghana",
   workingHours: "Monday to Friday, 8:00 AM to 5:00 PM",
   remoteSupportFileUrl: "",
-  googleAnalyticsId: "G-XXXXXXXXXX",
+  googleAnalyticsId: "",
   turnstileSiteKey: "0x4AAAAAAFWx04AEskoZCBMj",
   social: {
     facebook: "https://web.facebook.com/syrresa/directory_links",
